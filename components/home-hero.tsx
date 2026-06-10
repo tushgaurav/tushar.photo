@@ -1,0 +1,213 @@
+"use client"
+
+import { useCallback, useEffect, useState } from "react"
+import Image from "next/image"
+import Link from "next/link"
+import { AnimatePresence, motion } from "framer-motion"
+import { categories } from "@/lib/photos"
+
+export function HomeHero() {
+  const [active, setActive] = useState(0)
+  const category = categories[active]
+
+  const goPrev = useCallback(() => {
+    setActive((a) => (a - 1 + categories.length) % categories.length)
+  }, [])
+  const goNext = useCallback(() => {
+    setActive((a) => (a + 1) % categories.length)
+  }, [])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") goPrev()
+      if (e.key === "ArrowRight") goNext()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [goPrev, goNext])
+
+  const photos = category.photos
+  const leftThumbs = [photos[1], photos[2], photos[3]]
+  const rightThumbs = [
+    photos[4],
+    categories[(active + 1) % categories.length].photos[0],
+    categories[(active + 2) % categories.length].photos[0],
+  ]
+  const centerPhoto = photos[0]
+
+  return (
+    <main className="flex min-h-[calc(100svh-0.75rem)] flex-col overflow-hidden md:min-h-[calc(100svh-1.25rem)]">
+      {/* Filmstrip */}
+      <div className="flex items-start justify-center gap-2 px-3 pt-3 md:gap-5 md:px-8 md:pt-8">
+        {leftThumbs.map((photo, i) => (
+          <Thumb
+            key={`${category.slug}-l-${i}`}
+            src={photo.src}
+            alt={photo.alt}
+            delay={i * 0.06}
+            className={i < 1 ? "hidden lg:block" : i < 2 ? "hidden sm:block" : ""}
+          />
+        ))}
+
+        {/* Center enlarged photo with PREV / NEXT */}
+        <div className="relative w-[44%] shrink-0 sm:w-[30%] md:w-[19%]">
+          <button
+            type="button"
+            onClick={goPrev}
+            aria-label="Previous collection"
+            className="absolute top-[58%] right-full mr-3 hidden -translate-y-1/2 text-xs font-bold tracking-widest whitespace-nowrap transition-opacity hover:opacity-50 sm:block md:mr-8 md:text-sm"
+          >
+            {"[ PREV ]"}
+          </button>
+
+          <Link href={`/${category.slug}`} className="group block">
+            <div className="relative aspect-[4/5] w-full overflow-hidden bg-black">
+              <AnimatePresence mode="popLayout">
+                <motion.div
+                  key={category.slug}
+                  initial={{ opacity: 0, scale: 1.06 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.55, ease: [0.32, 0.72, 0, 1] }}
+                  className="absolute inset-0"
+                >
+                  <Image
+                    src={centerPhoto.src || "/placeholder.svg"}
+                    alt={centerPhoto.alt}
+                    fill
+                    priority
+                    sizes="(max-width: 768px) 44vw, 19vw"
+                    className="object-cover grayscale transition-transform duration-700 ease-out group-hover:scale-105"
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+            <span className="sr-only">{`View ${category.name} collection`}</span>
+          </Link>
+
+          <button
+            type="button"
+            onClick={goNext}
+            aria-label="Next collection"
+            className="absolute top-[58%] left-full ml-3 hidden -translate-y-1/2 text-xs font-bold tracking-widest whitespace-nowrap transition-opacity hover:opacity-50 sm:block md:ml-8 md:text-sm"
+          >
+            {"[ NEXT ]"}
+          </button>
+        </div>
+
+        {rightThumbs.map((photo, i) => (
+          <Thumb
+            key={`${category.slug}-r-${i}`}
+            src={photo.src}
+            alt={photo.alt}
+            delay={0.18 + i * 0.06}
+            className={i > 1 ? "hidden lg:block" : i > 0 ? "hidden sm:block" : ""}
+          />
+        ))}
+      </div>
+
+      {/* Mobile prev/next */}
+      <div className="flex items-center justify-center gap-12 pt-6 sm:hidden">
+        <button
+          type="button"
+          onClick={goPrev}
+          className="text-xs font-bold tracking-widest"
+          aria-label="Previous collection"
+        >
+          {"[ PREV ]"}
+        </button>
+        <button
+          type="button"
+          onClick={goNext}
+          className="text-xs font-bold tracking-widest"
+          aria-label="Next collection"
+        >
+          {"[ NEXT ]"}
+        </button>
+      </div>
+
+      {/* Big word */}
+      <div className="relative mt-auto flex flex-col items-center px-3 pb-4 md:px-8 md:pb-6">
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={`idx-${category.slug}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mb-1 text-xs font-medium tracking-wide md:text-sm"
+          >
+            {`[${category.index}]`}
+          </motion.p>
+        </AnimatePresence>
+
+        <div className="overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.h1
+              key={category.slug}
+              initial={{ y: "105%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "-105%" }}
+              transition={{ duration: 0.55, ease: [0.32, 0.72, 0, 1] }}
+              className="text-center"
+            >
+              <Link
+                href={`/${category.slug}`}
+                className="block text-[19vw] leading-[0.95] font-extrabold tracking-tighter lowercase transition-opacity hover:opacity-80 md:text-[16.5vw]"
+              >
+                {category.name}
+              </Link>
+            </motion.h1>
+          </AnimatePresence>
+        </div>
+
+        <span className="absolute bottom-5 left-3 text-xs font-bold tracking-widest md:bottom-8 md:left-8 md:text-sm">
+          TUSHAR
+        </span>
+        <Link
+          href="/about"
+          className="absolute right-3 bottom-5 text-xs font-bold tracking-widest transition-opacity hover:opacity-50 md:right-8 md:bottom-8 md:text-sm"
+        >
+          GAURAV
+        </Link>
+      </div>
+    </main>
+  )
+}
+
+function Thumb({
+  src,
+  alt,
+  delay,
+  className = "",
+}: {
+  src: string
+  alt: string
+  delay: number
+  className?: string
+}) {
+  return (
+    <div
+      className={`relative aspect-square w-[20%] shrink-0 overflow-hidden bg-black sm:w-[14%] md:w-[11%] ${className}`}
+    >
+      <AnimatePresence mode="popLayout">
+        <motion.div
+          key={src}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.45, delay, ease: [0.32, 0.72, 0, 1] }}
+          className="absolute inset-0"
+        >
+          <Image
+            src={src || "/placeholder.svg"}
+            alt={alt}
+            fill
+            sizes="(max-width: 768px) 20vw, 11vw"
+            className="object-cover grayscale"
+          />
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  )
+}
