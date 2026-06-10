@@ -141,19 +141,19 @@ export function HomeHero() {
           </motion.p>
         </AnimatePresence>
 
-        <div className="overflow-hidden">
+        <div className="overflow-hidden px-[1vw] pb-[2.5vw] md:pb-[2.2vw]">
           <AnimatePresence mode="wait">
             <motion.h1
               key={category.slug}
-              initial={{ y: "105%" }}
+              initial={{ y: "115%" }}
               animate={{ y: 0 }}
-              exit={{ y: "-105%" }}
+              exit={{ y: "-115%" }}
               transition={{ duration: 0.55, ease: [0.32, 0.72, 0, 1] }}
               className="text-center"
             >
               <Link
                 href={`/${category.slug}`}
-                className="block text-[19vw] leading-[0.95] font-extrabold tracking-tighter lowercase transition-opacity hover:opacity-80 md:text-[16.5vw]"
+                className="block text-[19vw] leading-none font-extrabold tracking-tighter lowercase transition-opacity hover:opacity-80 md:text-[16.5vw]"
               >
                 {category.name}
               </Link>
