@@ -5,10 +5,12 @@ import Image from "next/image"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import { categories } from "@/lib/photos"
+import { usePageTransition } from "@/components/page-transition"
 
 export function HomeHero() {
   const [active, setActive] = useState(0)
   const category = categories[active]
+  const { navigate } = usePageTransition()
 
   const goPrev = useCallback(() => {
     setActive((a) => (a - 1 + categories.length) % categories.length)
@@ -19,12 +21,17 @@ export function HomeHero() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Don't hijack keys when a link/button has focus (Enter should act natively)
+      const tag = (document.activeElement?.tagName ?? "").toLowerCase()
       if (e.key === "ArrowLeft") goPrev()
       if (e.key === "ArrowRight") goNext()
+      if (e.key === "Enter" && tag !== "a" && tag !== "button") {
+        navigate(`/${categories[active].slug}`, categories[active].name)
+      }
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [goPrev, goNext])
+  }, [goPrev, goNext, active, navigate])
 
   const photos = category.photos
   const leftThumbs = [photos[1], photos[2], photos[3]]
@@ -60,7 +67,16 @@ export function HomeHero() {
             {"[ PREV ]"}
           </button>
 
-          <Link href={`/${category.slug}`} className="group block">
+          <Link
+            href={`/${category.slug}`}
+            data-cursor="view"
+            onClick={(e) => {
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+              e.preventDefault()
+              navigate(`/${category.slug}`, category.name)
+            }}
+            className="group block"
+          >
             <div className="relative aspect-[4/5] w-full overflow-hidden bg-black">
               <AnimatePresence mode="popLayout">
                 <motion.div
@@ -153,6 +169,12 @@ export function HomeHero() {
             >
               <Link
                 href={`/${category.slug}`}
+                data-cursor="open"
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+                  e.preventDefault()
+                  navigate(`/${category.slug}`, category.name)
+                }}
                 className="block text-[19vw] leading-none font-extrabold tracking-tighter lowercase transition-opacity hover:opacity-80 md:text-[16.5vw]"
               >
                 {category.name}

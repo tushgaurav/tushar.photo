@@ -1,9 +1,11 @@
 "use client"
 
+import { useRef, useState } from "react"
 import Image from "next/image"
-import Link from "next/link"
-import { motion } from "framer-motion"
+import { motion, useScroll, useTransform } from "framer-motion"
 import type { Category, Photo } from "@/lib/photos"
+import { Lightbox } from "@/components/lightbox"
+import { TransitionLink } from "@/components/page-transition"
 
 const ease = [0.32, 0.72, 0, 1] as const
 
@@ -29,26 +31,87 @@ function Reveal({
   )
 }
 
-function EditorialRow({
+function ParallaxImage({
   photo,
-  index,
-  category,
+  aspect,
+  sizes,
+  onOpen,
+  priority = false,
 }: {
   photo: Photo
-  index: number
-  category: Category
+  aspect: string
+  sizes: string
+  onOpen: () => void
+  priority?: boolean
 }) {
-  if (photo.layout === "full") {
-    return (
-      <Reveal>
-        <figure className="relative aspect-[16/9] w-full overflow-hidden bg-black md:aspect-[2/1]">
+  const ref = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  })
+  // Image moves slightly slower than scroll for depth
+  const y = useTransform(scrollYProgress, [0, 1], ["-6%", "6%"])
+
+  return (
+    <div ref={ref} className={`relative w-full overflow-hidden bg-black ${aspect}`}>
+      <button
+        type="button"
+        onClick={onOpen}
+        data-cursor="view"
+        aria-label={`View ${photo.alt} fullscreen`}
+        className="group absolute inset-0 z-10"
+      >
+        <motion.div style={{ y }} className="absolute -inset-y-[8%] inset-x-0">
           <Image
             src={photo.src || "/placeholder.svg"}
             alt={photo.alt}
             fill
-            sizes="100vw"
-            className="object-cover grayscale"
+            sizes={sizes}
+            priority={priority}
+            className="object-cover grayscale transition-transform duration-700 ease-out group-hover:scale-[1.03]"
           />
+        </motion.div>
+      </button>
+    </div>
+  )
+}
+
+function ExifStrip({ photo, align = "left" }: { photo: Photo; align?: "left" | "right" }) {
+  return (
+    <div
+      className={`flex gap-4 text-[10px] font-medium tracking-widest text-muted-foreground ${
+        align === "right" ? "md:justify-end" : ""
+      }`}
+    >
+      <span>{photo.camera}</span>
+      <span>{photo.settings}</span>
+    </div>
+  )
+}
+
+function EditorialRow({
+  photo,
+  index,
+  onOpen,
+}: {
+  photo: Photo
+  index: number
+  onOpen: () => void
+}) {
+  if (photo.layout === "full") {
+    return (
+      <Reveal>
+        <figure>
+          <ParallaxImage
+            photo={photo}
+            aspect="aspect-[16/9] md:aspect-[2/1]"
+            sizes="100vw"
+            onOpen={onOpen}
+            priority={index === 0}
+          />
+          <figcaption className="mt-3">
+            <ExifStrip photo={photo} />
+          </figcaption>
         </figure>
       </Reveal>
     )
@@ -89,6 +152,9 @@ function EditorialRow({
               {photo.location}
             </p>
           ) : null}
+          <div className="mt-4">
+            <ExifStrip photo={photo} align={imageFirst ? "left" : "right"} />
+          </div>
         </div>
       </Reveal>
     </div>
@@ -96,15 +162,13 @@ function EditorialRow({
 
   const image = (
     <Reveal>
-      <figure className="relative aspect-[4/5] w-full overflow-hidden bg-black">
-        <Image
-          src={photo.src || "/placeholder.svg"}
-          alt={photo.alt}
-          fill
-          sizes="(max-width: 768px) 100vw, 60vw"
-          className="object-cover grayscale"
-        />
-      </figure>
+      <ParallaxImage
+        photo={photo}
+        aspect="aspect-[4/5]"
+        sizes="(max-width: 768px) 100vw, 60vw"
+        onOpen={onOpen}
+        priority={index === 0}
+      />
     </Reveal>
   )
 
@@ -134,17 +198,19 @@ export function CategoryGallery({
   prev: Category
   next: Category
 }) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+
   return (
     <main className="px-4 py-6 md:px-10 md:py-10">
       {/* Header */}
       <header className="mb-12 md:mb-20">
         <div className="flex items-start justify-between">
-          <Link
+          <TransitionLink
             href="/"
             className="text-xs font-bold tracking-widest transition-opacity hover:opacity-50 md:text-sm"
           >
             {"[ ← INDEX ]"}
-          </Link>
+          </TransitionLink>
           <motion.span
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -156,12 +222,12 @@ export function CategoryGallery({
         </div>
 
         <div className="mt-8 flex flex-col gap-6 md:mt-12 md:flex-row md:items-end md:justify-between md:gap-12">
-          <div className="overflow-hidden">
+          <div className="overflow-hidden pb-[0.12em]">
             <motion.h1
-              initial={{ y: "105%" }}
+              initial={{ y: "115%" }}
               animate={{ y: 0 }}
               transition={{ duration: 0.7, ease }}
-              className="text-7xl leading-[0.9] font-extrabold tracking-tighter lowercase md:text-9xl"
+              className="text-7xl leading-none font-extrabold tracking-tighter lowercase md:text-9xl"
             >
               {category.name}
             </motion.h1>
@@ -184,7 +250,7 @@ export function CategoryGallery({
             key={photo.src}
             photo={photo}
             index={i}
-            category={category}
+            onOpen={() => setLightboxIndex(i)}
           />
         ))}
       </div>
@@ -195,21 +261,33 @@ export function CategoryGallery({
           {`0${category.index}/0${4}`}
         </span>
         <nav className="flex items-center gap-2 text-xs font-bold tracking-widest md:text-sm">
-          <Link
+          <TransitionLink
             href={`/${next.slug}`}
+            label={next.name}
+            data-cursor="next"
             className="transition-opacity hover:opacity-50"
           >
             NEXT
-          </Link>
+          </TransitionLink>
           <span aria-hidden="true">/</span>
-          <Link
+          <TransitionLink
             href={`/${prev.slug}`}
+            label={prev.name}
+            data-cursor="prev"
             className="transition-opacity hover:opacity-50"
           >
             PREV
-          </Link>
+          </TransitionLink>
         </nav>
       </footer>
+
+      <Lightbox
+        photos={category.photos}
+        openIndex={lightboxIndex}
+        onClose={() => setLightboxIndex(null)}
+        onNavigate={setLightboxIndex}
+        categoryName={category.name}
+      />
     </main>
   )
 }

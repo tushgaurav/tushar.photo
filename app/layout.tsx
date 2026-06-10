@@ -1,6 +1,8 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata } from 'next'
 import { Inter, Geist_Mono } from 'next/font/google'
+import { CustomCursor } from '@/components/custom-cursor'
+import { PageTransitionProvider } from '@/components/page-transition'
 import './globals.css'
 
 const inter = Inter({
@@ -31,9 +33,12 @@ export default function RootLayout({
       className={`${inter.variable} ${geistMono.variable} bg-black`}
     >
       <body className="p-1.5 font-sans antialiased md:p-2.5">
-        <div className="min-h-svh bg-background text-foreground">
-          {children}
-        </div>
+        <PageTransitionProvider>
+          <div className="min-h-svh bg-background text-foreground">
+            {children}
+          </div>
+        </PageTransitionProvider>
+        <CustomCursor />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
