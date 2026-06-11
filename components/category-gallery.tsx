@@ -221,13 +221,13 @@ export function CategoryGallery({
           </motion.span>
         </div>
 
-        <div className="mt-8 flex flex-col gap-6 md:mt-12 md:flex-row md:items-end md:justify-between md:gap-12">
-          <div className="overflow-hidden pb-[0.12em]">
+        <div className="mt-8 flex flex-col gap-6 md:mt-12 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
+          <div className="overflow-hidden px-[0.08em] pb-[0.14em]">
             <motion.h1
               initial={{ y: "115%" }}
               animate={{ y: 0 }}
               transition={{ duration: 0.7, ease }}
-              className="text-7xl leading-none font-extrabold tracking-tighter lowercase md:text-9xl"
+              className="text-[clamp(3rem,13vw,8rem)] leading-none font-extrabold tracking-tighter lowercase text-balance"
             >
               {category.name}
             </motion.h1>
