@@ -1,33 +1,61 @@
 # tushar.photo
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+The personal photography portfolio of **Tushar Gaurav** — a black-and-white journal of streets, wildlife, landscapes, and portraits shot across India.
 
-## Built with v0
+![Screenshot](./docs/screenshot.png)
 
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
+## About
 
-[Continue working on v0 →](https://v0.app/chat/projects/prj_864wuGURRGHSZjehLUmmpWVkKQCr)
+A minimal, motion-driven photography site built around four bodies of work. Each category is a self-contained gallery with its own intro, full-frame and split layouts, captions, and shot metadata (camera, lens, and settings). The whole experience leans into a stark monochrome aesthetic with an animated intro, custom cursor, and page transitions.
+
+### Collections
+
+- **streets** — candid moments, light cutting through alleys, the city breathing.
+- **wildlife** — patient frames earned by sitting still: leopards, elephants, eagles, wild horses.
+- **landscapes** — Himalayan ridges, desert dunes, coastlines, and long-exposure waterfalls.
+- **portraits** — strangers and craftspeople, each photo starting with a conversation.
+
+## Tech Stack
+
+- [Next.js 16](https://nextjs.org) (App Router)
+- [React 19](https://react.dev)
+- [Tailwind CSS 4](https://tailwindcss.com)
+- [Framer Motion](https://www.framer.com/motion/) for intro, transitions, and gallery animations
+- [shadcn](https://ui.shadcn.com) / [Base UI](https://base-ui.com) components
+- [Vercel Analytics](https://vercel.com/analytics)
+
+## Project Structure
+
+```
+app/
+  page.tsx            # Home hero + intro loader
+  [category]/page.tsx # Dynamic gallery per collection
+  about/page.tsx      # About / bio
+  layout.tsx          # Fonts, cursor, page transitions
+components/            # Hero, gallery, lightbox, cursor, transitions
+lib/photos.ts         # Collections + photo metadata (single source of truth)
+public/photos/        # Image assets
+docs/                 # Screenshots and project docs
+```
+
+All collections and per-photo metadata live in `lib/photos.ts` — add or edit a category there and the routes, navigation, and galleries update automatically.
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies and run the development server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the site.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-## Learn More
-
-To learn more, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the development server |
+| `npm run build` | Build for production |
+| `npm run start` | Run the production build |
+| `npm run lint` | Lint the codebase |
