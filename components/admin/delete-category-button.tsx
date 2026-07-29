@@ -24,7 +24,7 @@ export function DeleteCategoryButton({
   if (!confirming) {
     return (
       <Button variant="destructive" onClick={() => setConfirming(true)}>
-        Delete collection
+        Delete Collection
       </Button>
     )
   }
@@ -51,7 +51,7 @@ export function DeleteCategoryButton({
             })
           }
         >
-          {pending ? "Deleting…" : "Delete permanently"}
+          {pending ? "Deleting…" : "Delete Permanently"}
         </Button>
         <Button
           variant="outline"

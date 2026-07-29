@@ -84,7 +84,7 @@ export function PhotoUploader({ categoryId }: { categoryId: string }) {
         {({ open }) => (
           <div>
             <Button type="button" size="lg" onClick={() => open()}>
-              Upload photos
+              Upload Photos
             </Button>
           </div>
         )}

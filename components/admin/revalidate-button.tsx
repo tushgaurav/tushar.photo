@@ -26,7 +26,7 @@ export function RevalidateButton() {
         })
       }
     >
-      {pending ? "Refreshing…" : done ? "Refreshed" : "Refresh site cache"}
+      {pending ? "Refreshing…" : done ? "Refreshed" : "Refresh Site Cache"}
     </Button>
   )
 }

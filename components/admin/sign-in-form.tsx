@@ -69,7 +69,7 @@ export function SignInForm({ next }: { next: string }) {
       )}
 
       <Button type="submit" size="lg" disabled={pending} className="mt-2 w-full">
-        {pending ? "Signing in…" : "Sign in"}
+        {pending ? "Signing In…" : "Sign In"}
       </Button>
     </form>
   )

@@ -140,7 +140,7 @@ export function PhotoForm({ photo }: { photo: AdminPhoto }) {
 
       <div>
         <Button type="submit" size="lg" disabled={pending}>
-          {pending ? "Saving…" : "Save changes"}
+          {pending ? "Saving…" : "Save Changes"}
         </Button>
       </div>
     </form>

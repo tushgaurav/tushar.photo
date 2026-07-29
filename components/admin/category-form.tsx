@@ -109,8 +109,8 @@ export function CategoryForm({ category }: { category?: CategoryFormValues }) {
           {pending
             ? "Saving…"
             : category
-              ? "Save changes"
-              : "Create collection"}
+              ? "Save Changes"
+              : "Create Collection"}
         </Button>
       </div>
     </form>

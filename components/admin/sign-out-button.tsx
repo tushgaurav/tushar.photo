@@ -22,7 +22,7 @@ export function SignOutButton() {
         router.refresh()
       }}
     >
-      {pending ? "Signing out…" : "Sign out"}
+      {pending ? "Signing Out…" : "Sign Out"}
     </Button>
   )
 }

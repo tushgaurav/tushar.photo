@@ -23,7 +23,7 @@ export default async function AdminCategoriesPage() {
           </p>
         </div>
         <Button render={<Link href="/admin/categories/new" />} size="lg">
-          New collection
+          New Collection
         </Button>
       </header>
 

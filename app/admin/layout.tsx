@@ -18,7 +18,8 @@ export default function AdminLayout({
 }) {
   return (
     <div className="min-h-svh">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-4 py-4 md:px-10">
+      {/* Needs an opaque background: content scrolls underneath it. */}
+      <header className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-4 border-b border-border bg-background px-4 py-4 md:px-10">
         <div className="flex flex-wrap items-center gap-6">
           <Link
             href="/admin"

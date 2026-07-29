@@ -58,6 +58,11 @@ export function CustomCursor() {
       style={{ x: springX, y: springY }}
       className="pointer-events-none fixed top-0 left-0 z-[100] hidden -translate-x-1/2 -translate-y-1/2 mix-blend-difference md:block"
     >
+      {/*
+        Only the contextual labels follow the pointer. There is deliberately no
+        idle dot: it tracked into text inputs across the admin forms, and the
+        native cursor is never hidden, so nothing needs to stand in for it.
+      */}
       <AnimatePresence mode="wait">
         {text ? (
           <motion.span
@@ -70,16 +75,7 @@ export function CustomCursor() {
           >
             {text}
           </motion.span>
-        ) : (
-          <motion.span
-            key="dot"
-            initial={{ scale: 0 }}
-            animate={{ scale: pressed ? 0.6 : 1 }}
-            exit={{ scale: 0 }}
-            transition={{ duration: 0.18 }}
-            className="block size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
-          />
-        )}
+        ) : null}
       </AnimatePresence>
     </motion.div>
   )
