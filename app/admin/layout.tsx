@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import Link from "next/link"
 import { Suspense } from "react"
 
@@ -31,9 +32,22 @@ export default function AdminLayout({
         <div className="flex flex-wrap items-center gap-6">
           <Link
             href="/admin"
-            className="text-xs font-bold tracking-widest uppercase transition-opacity hover:opacity-50"
+            aria-label="Admin home"
+            className="transition-opacity hover:opacity-50"
           >
-            Admin
+            <Image
+              src="/tushar-sign-black.jpg"
+              alt="Tushar Gaurav"
+              width={420}
+              height={100}
+              priority
+              /*
+               * The signature is a JPEG, so its ground is white while the header
+               * is a warm grey. Multiply blends the white away and leaves the
+               * strokes; this relies on the admin always being light-themed.
+               */
+              className="h-6 w-auto mix-blend-multiply"
+            />
           </Link>
           <nav className="flex items-center gap-5 text-xs font-medium tracking-widest uppercase text-muted-foreground">
             <Link href="/admin/categories" className="hover:text-foreground">
