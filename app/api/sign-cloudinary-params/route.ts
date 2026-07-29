@@ -13,9 +13,14 @@ import { CLOUDINARY_FOLDER } from "@/lib/cloudinary"
  *  1. A valid session is required. An open signing endpoint is effectively an
  *     anonymous write handle on the Cloudinary account — anyone could upload
  *     arbitrary files and run up the bill.
- *  2. The folder is overridden server-side rather than trusted from the
- *     request, so a crafted client cannot scatter uploads across the account
- *     or overwrite assets belonging to something else.
+ *  2. The folder is checked against the expected one, so a crafted client
+ *     cannot scatter uploads across the account or overwrite assets belonging
+ *     to something else.
+ *
+ * The folder is validated rather than injected. Cloudinary verifies the
+ * signature against the parameters the browser actually sends, so adding a
+ * parameter here that the widget does not send produces a signature over a
+ * different string and the upload is rejected as "Invalid Signature".
  */
 export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -37,10 +42,14 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 })
   }
 
-  const signature = cloudinary.utils.api_sign_request(
-    { ...paramsToSign, folder: CLOUDINARY_FOLDER },
-    apiSecret,
-  )
+  if (paramsToSign.folder !== CLOUDINARY_FOLDER) {
+    return Response.json(
+      { error: `Uploads must target the "${CLOUDINARY_FOLDER}" folder` },
+      { status: 400 },
+    )
+  }
+
+  const signature = cloudinary.utils.api_sign_request(paramsToSign, apiSecret)
 
   return Response.json({ signature })
 }

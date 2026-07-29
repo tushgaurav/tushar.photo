@@ -6,6 +6,7 @@ import { CldUploadWidget } from "next-cloudinary"
 
 import { attachUploadedPhoto } from "@/app/admin/actions"
 import { Button } from "@/components/ui/button"
+import { CLOUDINARY_FOLDER } from "@/lib/cloudinary"
 
 type UploadInfo = {
   public_id?: string
@@ -49,6 +50,9 @@ export function PhotoUploader({ categoryId }: { categoryId: string }) {
       <CldUploadWidget
         signatureEndpoint="/api/sign-cloudinary-params"
         options={{
+          // Must be sent by the widget, not added server-side: the signature
+          // has to cover exactly the parameters the browser uploads with.
+          folder: CLOUDINARY_FOLDER,
           multiple: true,
           sources: ["local", "url"],
           clientAllowedFormats: ["png", "jpg", "jpeg", "webp", "avif"],
