@@ -3,11 +3,16 @@
 import { useRef, useState } from "react"
 import Image from "next/image"
 import { motion, useScroll, useTransform } from "framer-motion"
-import type { Category, Photo } from "@/lib/photos"
+import type { Category, Photo } from "@/lib/content"
 import { Lightbox } from "@/components/lightbox"
 import { TransitionLink } from "@/components/page-transition"
 
 const ease = [0.32, 0.72, 0, 1] as const
+
+/** Zero-pads to two digits, matching the original hardcoded `01/04` styling. */
+function pad(value: number): string {
+  return String(value).padStart(2, "0")
+}
 
 function Reveal({
   children,
@@ -193,10 +198,13 @@ export function CategoryGallery({
   category,
   prev,
   next,
+  total,
 }: {
   category: Category
-  prev: Category
-  next: Category
+  /** Null when there is only one category, so there is nowhere to navigate. */
+  prev: Category | null
+  next: Category | null
+  total: number
 }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
@@ -247,7 +255,7 @@ export function CategoryGallery({
       <div className="flex flex-col gap-16 md:gap-28">
         {category.photos.map((photo, i) => (
           <EditorialRow
-            key={photo.src}
+            key={photo.id}
             photo={photo}
             index={i}
             onOpen={() => setLightboxIndex(i)}
@@ -258,27 +266,29 @@ export function CategoryGallery({
       {/* Footer nav */}
       <footer className="mt-16 flex items-center justify-between md:mt-24">
         <span className="text-xs font-bold tracking-widest md:text-sm">
-          {`0${category.index}/0${4}`}
+          {`${pad(category.index)}/${pad(total)}`}
         </span>
-        <nav className="flex items-center gap-2 text-xs font-bold tracking-widest md:text-sm">
-          <TransitionLink
-            href={`/${next.slug}`}
-            label={next.name}
-            data-cursor="next"
-            className="transition-opacity hover:opacity-50"
-          >
-            NEXT
-          </TransitionLink>
-          <span aria-hidden="true">/</span>
-          <TransitionLink
-            href={`/${prev.slug}`}
-            label={prev.name}
-            data-cursor="prev"
-            className="transition-opacity hover:opacity-50"
-          >
-            PREV
-          </TransitionLink>
-        </nav>
+        {next && prev ? (
+          <nav className="flex items-center gap-2 text-xs font-bold tracking-widest md:text-sm">
+            <TransitionLink
+              href={`/${next.slug}`}
+              label={next.name}
+              data-cursor="next"
+              className="transition-opacity hover:opacity-50"
+            >
+              NEXT
+            </TransitionLink>
+            <span aria-hidden="true">/</span>
+            <TransitionLink
+              href={`/${prev.slug}`}
+              label={prev.name}
+              data-cursor="prev"
+              className="transition-opacity hover:opacity-50"
+            >
+              PREV
+            </TransitionLink>
+          </nav>
+        ) : null}
       </footer>
 
       <Lightbox

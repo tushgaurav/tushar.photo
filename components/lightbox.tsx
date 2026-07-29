@@ -3,7 +3,7 @@
 import { useCallback, useEffect } from "react"
 import Image from "next/image"
 import { AnimatePresence, motion } from "framer-motion"
-import type { Photo } from "@/lib/photos"
+import type { Photo } from "@/lib/content"
 
 const ease = [0.32, 0.72, 0, 1] as const
 

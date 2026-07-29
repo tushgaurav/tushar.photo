@@ -4,20 +4,19 @@ import { useCallback, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
-import { categories } from "@/lib/photos"
+import type { Category } from "@/lib/content"
 import { usePageTransition } from "@/components/page-transition"
 
-export function HomeHero() {
+export function HomeHero({ categories }: { categories: Category[] }) {
   const [active, setActive] = useState(0)
-  const category = categories[active]
   const { navigate } = usePageTransition()
 
   const goPrev = useCallback(() => {
     setActive((a) => (a - 1 + categories.length) % categories.length)
-  }, [])
+  }, [categories.length])
   const goNext = useCallback(() => {
     setActive((a) => (a + 1) % categories.length)
-  }, [])
+  }, [categories.length])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -26,21 +25,38 @@ export function HomeHero() {
       if (e.key === "ArrowLeft") goPrev()
       if (e.key === "ArrowRight") goNext()
       if (e.key === "Enter" && tag !== "a" && tag !== "button") {
-        navigate(`/${categories[active].slug}`, categories[active].name)
+        const current = categories[active]
+        if (current) navigate(`/${current.slug}`, current.name)
       }
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [goPrev, goNext, active, navigate])
+  }, [goPrev, goNext, active, navigate, categories])
+
+  const category = categories[active]
+
+  // Content is editable now, so an empty or partially-filled database is a real
+  // state rather than an impossible one.
+  if (!category) return null
 
   const photos = category.photos
-  const leftThumbs = [photos[1], photos[2], photos[3]]
-  const rightThumbs = [
-    photos[4],
-    categories[(active + 1) % categories.length].photos[0],
-    categories[(active + 2) % categories.length].photos[0],
-  ]
   const centerPhoto = photos[0]
+
+  if (!centerPhoto) return null
+
+  /**
+   * The filmstrip wants three thumbnails either side. Rather than indexing
+   * fixed positions — which broke as soon as a category could have fewer than
+   * five photos — draw from this category first and top up from the following
+   * ones, skipping any gaps.
+   */
+  const otherFirstPhotos = Array.from(
+    { length: Math.max(categories.length - 1, 0) },
+    (_, offset) => categories[(active + offset + 1) % categories.length],
+  ).flatMap((c) => (c?.photos[0] ? [c.photos[0]] : []))
+
+  const leftThumbs = photos.slice(1, 4)
+  const rightThumbs = [...photos.slice(4, 5), ...otherFirstPhotos].slice(0, 3)
 
   return (
     <main className="flex min-h-[calc(100svh-0.75rem)] flex-col overflow-hidden md:min-h-[calc(100svh-1.25rem)]">

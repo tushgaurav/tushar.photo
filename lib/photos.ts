@@ -1,4 +1,13 @@
-export type Photo = {
+/**
+ * Legacy content, retained only as the input to `scripts/seed.ts`.
+ *
+ * The site no longer reads this file — galleries come from Postgres via
+ * `lib/queries/photos.ts`. It stays in the repo so the original content can be
+ * re-seeded into a fresh database, and can be deleted once that is no longer
+ * useful. Editing it has no effect on the live site.
+ */
+
+export type LegacyPhoto = {
   src: string
   alt: string
   caption?: string
@@ -10,16 +19,16 @@ export type Photo = {
   settings: string
 }
 
-export type Category = {
+export type LegacyCategory = {
   slug: string
   name: string
   index: number
   year: string
   intro: string
-  photos: Photo[]
+  photos: LegacyPhoto[]
 }
 
-export const categories: Category[] = [
+export const categories: LegacyCategory[] = [
   {
     slug: "streets",
     name: "streets",
@@ -277,17 +286,3 @@ export const categories: Category[] = [
     ],
   },
 ]
-
-export function getCategory(slug: string): Category | undefined {
-  return categories.find((c) => c.slug === slug)
-}
-
-export function getAdjacentCategories(slug: string): {
-  prev: Category
-  next: Category
-} {
-  const i = categories.findIndex((c) => c.slug === slug)
-  const prev = categories[(i - 1 + categories.length) % categories.length]
-  const next = categories[(i + 1) % categories.length]
-  return { prev, next }
-}
