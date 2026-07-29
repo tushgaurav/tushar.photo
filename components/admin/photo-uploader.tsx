@@ -24,12 +24,22 @@ export function PhotoUploader({ categoryId }: { categoryId: string }) {
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+  /**
+   * CldUploadWidget throws while rendering if either of these is missing, which
+   * would take down the whole category editor rather than just the upload
+   * button. Checking first keeps the rest of the page usable.
+   */
+  const missing = [
+    ["NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME", process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME],
+    ["NEXT_PUBLIC_CLOUDINARY_API_KEY", process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY],
+  ]
+    .filter(([, value]) => !value)
+    .map(([name]) => name)
 
-  if (!cloudName) {
+  if (missing.length > 0) {
     return (
       <p className="text-sm text-destructive">
-        Set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME to enable uploads.
+        Uploads are disabled: set {missing.join(" and ")}.
       </p>
     )
   }
