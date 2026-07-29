@@ -5,10 +5,17 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 
 import type { AboutContentData } from "@/lib/content"
+import { SiteMenu, type MenuCollection } from "@/components/site-menu"
 
 const ease = [0.32, 0.72, 0, 1] as const
 
-export function AboutContent({ about }: { about: AboutContentData | null }) {
+export function AboutContent({
+  about,
+  collections,
+}: {
+  about: AboutContentData | null
+  collections: MenuCollection[]
+}) {
   const paragraphs = about?.paragraphs ?? []
   const links = about?.links ?? []
   const year = about?.year ?? "2025"
@@ -23,9 +30,12 @@ export function AboutContent({ about }: { about: AboutContentData | null }) {
         >
           {"[ ← INDEX ]"}
         </Link>
-        <span className="text-xs font-medium tracking-wide md:text-sm">
-          {`[${year}]`}
-        </span>
+        <div className="flex items-baseline gap-4 md:gap-6">
+          <span className="text-xs font-medium tracking-wide md:text-sm">
+            {`[${year}]`}
+          </span>
+          <SiteMenu collections={collections} />
+        </div>
       </header>
 
       <div className="mt-10 overflow-hidden md:mt-16">

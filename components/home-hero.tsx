@@ -6,9 +6,11 @@ import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import type { Category } from "@/lib/content"
 import { usePageTransition } from "@/components/page-transition"
+import { SiteMenu } from "@/components/site-menu"
 
 export function HomeHero({ categories }: { categories: Category[] }) {
   const [active, setActive] = useState(0)
+  const [menuOpen, setMenuOpen] = useState(false)
   const { navigate } = usePageTransition()
 
   const goPrev = useCallback(() => {
@@ -20,6 +22,8 @@ export function HomeHero({ categories }: { categories: Category[] }) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // The menu covers the filmstrip, so it owns the keyboard while open.
+      if (menuOpen) return
       // Don't hijack keys when a link/button has focus (Enter should act natively)
       const tag = (document.activeElement?.tagName ?? "").toLowerCase()
       if (e.key === "ArrowLeft") goPrev()
@@ -31,7 +35,7 @@ export function HomeHero({ categories }: { categories: Category[] }) {
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [goPrev, goNext, active, navigate, categories])
+  }, [goPrev, goNext, active, navigate, categories, menuOpen])
 
   const category = categories[active]
 
@@ -202,12 +206,12 @@ export function HomeHero({ categories }: { categories: Category[] }) {
         <span className="absolute bottom-5 left-3 text-xs font-bold tracking-widest md:bottom-8 md:left-8 md:text-sm">
           TUSHAR
         </span>
-        <Link
-          href="/about"
-          className="absolute right-3 bottom-5 text-xs font-bold tracking-widest transition-opacity hover:opacity-50 md:right-8 md:bottom-8 md:text-sm"
-        >
-          GAURAV
-        </Link>
+        <div className="absolute right-3 bottom-5 flex items-baseline gap-4 md:right-8 md:bottom-8 md:gap-6">
+          <SiteMenu collections={categories} onOpenChange={setMenuOpen} />
+          <span className="text-xs font-bold tracking-widest md:text-sm">
+            GAURAV
+          </span>
+        </div>
       </div>
     </main>
   )

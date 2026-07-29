@@ -1,0 +1,16 @@
+import type { Metadata } from "next"
+
+import { GearContent } from "@/components/gear-content"
+import { getCategories } from "@/lib/queries/photos"
+
+export const metadata: Metadata = {
+  title: "Gear — Tushar Gaurav Photography",
+  description:
+    "The cameras, lenses and everything else Tushar Gaurav shoots black and white photography with.",
+}
+
+export default async function GearPage() {
+  const categories = await getCategories()
+
+  return <GearContent collections={categories} />
+}

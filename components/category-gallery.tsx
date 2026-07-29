@@ -6,6 +6,7 @@ import { motion, useScroll, useTransform } from "framer-motion"
 import type { Category, Photo } from "@/lib/content"
 import { Lightbox } from "@/components/lightbox"
 import { TransitionLink } from "@/components/page-transition"
+import { SiteMenu, type MenuCollection } from "@/components/site-menu"
 
 const ease = [0.32, 0.72, 0, 1] as const
 
@@ -198,13 +199,14 @@ export function CategoryGallery({
   category,
   prev,
   next,
-  total,
+  collections,
 }: {
   category: Category
   /** Null when there is only one category, so there is nowhere to navigate. */
   prev: Category | null
   next: Category | null
-  total: number
+  /** Every category, for the menu and the `01/04` footer count. */
+  collections: MenuCollection[]
 }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
@@ -219,14 +221,17 @@ export function CategoryGallery({
           >
             {"[ ← INDEX ]"}
           </TransitionLink>
-          <motion.span
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-xs font-medium tracking-wide md:text-sm"
-          >
-            {`[${category.year}]`}
-          </motion.span>
+          <div className="flex items-baseline gap-4 md:gap-6">
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="text-xs font-medium tracking-wide md:text-sm"
+            >
+              {`[${category.year}]`}
+            </motion.span>
+            <SiteMenu collections={collections} />
+          </div>
         </div>
 
         <div className="mt-8 flex flex-col gap-6 md:mt-12 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
@@ -266,7 +271,7 @@ export function CategoryGallery({
       {/* Footer nav */}
       <footer className="mt-16 flex items-center justify-between md:mt-24">
         <span className="text-xs font-bold tracking-widest md:text-sm">
-          {`${pad(category.index)}/${pad(total)}`}
+          {`${pad(category.index)}/${pad(collections.length)}`}
         </span>
         {next && prev ? (
           <nav className="flex items-center gap-2 text-xs font-bold tracking-widest md:text-sm">

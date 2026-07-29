@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 
 import { AboutContent } from "@/components/about-content"
 import { getAboutContent } from "@/lib/queries/about"
+import { getCategories } from "@/lib/queries/photos"
 
 export const metadata: Metadata = {
   title: "About — Tushar Gaurav Photography",
@@ -10,7 +11,10 @@ export const metadata: Metadata = {
 }
 
 export default async function AboutPage() {
-  const about = await getAboutContent()
+  const [about, categories] = await Promise.all([
+    getAboutContent(),
+    getCategories(),
+  ])
 
-  return <AboutContent about={about} />
+  return <AboutContent about={about} collections={categories} />
 }

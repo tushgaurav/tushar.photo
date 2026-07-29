@@ -49,7 +49,7 @@ export default async function CategoryPage({
       category={cat}
       prev={adjacent?.prev ?? null}
       next={adjacent?.next ?? null}
-      total={all.length}
+      collections={all}
     />
   )
 }
