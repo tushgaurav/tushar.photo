@@ -6,8 +6,10 @@ import { redirect } from "next/navigation"
 
 import { ABOUT_TAG, CONTENT_TAG, categoryTag } from "@/lib/cache-tags"
 import { requireAdmin } from "@/lib/auth-guard"
+import { fetchImageMetadata } from "@/lib/cloudinary-admin"
 import { db } from "@/lib/db"
 import { aboutPage, categories, photos } from "@/lib/db/schema"
+import { deriveExifFields } from "@/lib/exif"
 import {
   aboutSchema,
   categorySchema,
@@ -226,6 +228,18 @@ export async function attachUploadedPhoto(input: {
 
   if (!category) return { ok: false, error: "Category not found." }
 
+  /*
+   * Pre-fill the camera details from the file's own EXIF, so the only thing
+   * left to write by hand is the part a machine cannot know.
+   *
+   * Strictly a convenience: the upload has already succeeded by this point, so
+   * a metadata failure must cost the photographer nothing. Everything falls
+   * back to the previous defaults.
+   */
+  const exif = await fetchImageMetadata(parsed.data.cloudinaryPublicId)
+    .then(deriveExifFields)
+    .catch(() => null)
+
   const [{ value: currentMax }] = await db
     .select({ value: max(photos.sortIndex) })
     .from(photos)
@@ -242,7 +256,11 @@ export async function attachUploadedPhoto(input: {
       // time. Start unpublished so a photo can never reach visitors without a
       // description having been written for it.
       alt: "",
-      year: category.year,
+      // The capture year is more precise than the collection's when known.
+      year: exif?.year ?? category.year,
+      camera: exif?.camera ?? "",
+      lens: exif?.lens ?? "",
+      settings: exif?.settings ?? "",
       layout: "full",
       sortIndex: (currentMax ?? -1) + 1,
       published: false,
