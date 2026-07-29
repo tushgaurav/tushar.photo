@@ -5,6 +5,7 @@ import { Suspense } from "react"
 
 import { PendingRows } from "@/components/admin/pending-rows"
 import { SignOutButton } from "@/components/admin/sign-out-button"
+import { Toaster } from "@/components/ui/sonner"
 import { requireAdmin } from "@/lib/auth-guard"
 
 export const metadata: Metadata = {
@@ -83,6 +84,9 @@ export default function AdminLayout({
       <div className="px-4 py-8 md:px-10 md:py-10">
         <Suspense fallback={<PendingRows rows={6} />}>{children}</Suspense>
       </div>
+
+      {/* Admin only: the public site has no mutations to report on. */}
+      <Toaster />
     </div>
   )
 }

@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 
 import {
   deletePhoto,
@@ -94,7 +95,6 @@ function PhotoRow({
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
-  const [rowError, setRowError] = useState<string | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   const missingAlt = photo.alt.trim().length === 0
@@ -150,11 +150,6 @@ function PhotoRow({
             {photo.width}×{photo.height}
           </span>
         </p>
-        {rowError ? (
-          <p role="alert" className="text-xs text-destructive">
-            {rowError}
-          </p>
-        ) : null}
       </div>
 
       <span className="flex items-center gap-1">
@@ -185,15 +180,15 @@ function PhotoRow({
           disabled={pending}
           onClick={() =>
             startTransition(async () => {
-              setRowError(null)
               const result = await setPhotoPublished(
                 photo.id,
                 !photo.published,
               )
               if (!result.ok) {
-                setRowError(result.error)
+                toast.error(result.error)
                 return
               }
+              toast.success(photo.published ? "Photo hidden" : "Photo published")
               router.refresh()
             })
           }
@@ -219,9 +214,11 @@ function PhotoRow({
                 startTransition(async () => {
                   const result = await deletePhoto(photo.id)
                   if (!result.ok) {
-                    setRowError(result.error)
+                    toast.error(result.error)
                     return
                   }
+                  setConfirmingDelete(false)
+                  toast.success("Photo deleted")
                   router.refresh()
                 })
               }

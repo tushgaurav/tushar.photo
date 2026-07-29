@@ -19,6 +19,19 @@ export function useReorder<T extends { id: string }>(
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  /**
+   * Re-seed from the server when it sends a different list. Without this the
+   * local copy taken at mount wins forever, so a row deleted elsewhere in the
+   * page stays on screen even after router.refresh() has fetched the new data.
+   * `initial` comes from a server component, so its identity only changes when
+   * the server actually re-rendered — local setState does not trip this.
+   */
+  const [seed, setSeed] = useState(initial)
+  if (seed !== initial) {
+    setSeed(initial)
+    setItems(initial)
+  }
+
   const commit = useCallback(
     async (next: T[]) => {
       const previous = items
