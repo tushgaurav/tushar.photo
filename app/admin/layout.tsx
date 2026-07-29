@@ -16,8 +16,16 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
+  /*
+   * The root layout insets every page by the body's frame padding, which the
+   * public site uses as a border. Admin is a full-bleed app UI, and that inset
+   * otherwise stacks on top of the header's own py-4 (reading as lopsided
+   * padding) and leaves the sticky header sitting below the viewport edge until
+   * it snaps flush on scroll. The negative margin cancels it exactly, so the
+   * page still totals 100svh.
+   */
   return (
-    <div className="min-h-svh">
+    <div className="-m-1.5 min-h-svh md:-m-2.5">
       {/* Needs an opaque background: content scrolls underneath it. */}
       <header className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-4 border-b border-border bg-background px-4 py-4 md:px-10">
         <div className="flex flex-wrap items-center gap-6">
