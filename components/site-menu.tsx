@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import type { Category } from "@/lib/content"
 import { NAV_LINKS } from "@/lib/nav"
 import { usePageTransition } from "@/components/page-transition"
+import { SignatureMark } from "@/components/signature-mark"
 
 const ease = [0.32, 0.72, 0, 1] as const
 
@@ -221,13 +222,8 @@ export function SiteMenu({
               </div>
             </div>
 
-            <div className="flex items-center justify-between px-4 py-4 md:px-8 md:py-6">
-              <span className="text-xs font-bold tracking-widest md:text-sm">
-                TUSHAR
-              </span>
-              <span className="text-xs font-bold tracking-widest md:text-sm">
-                GAURAV
-              </span>
+            <div className="flex items-center px-4 py-4 md:px-8 md:py-6">
+              <SignatureMark tone="dark" />
             </div>
           </motion.div>
         ) : null}

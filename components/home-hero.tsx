@@ -6,6 +6,7 @@ import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import type { Category } from "@/lib/content"
 import { usePageTransition } from "@/components/page-transition"
+import { SignatureMark } from "@/components/signature-mark"
 import { SiteMenu } from "@/components/site-menu"
 
 export function HomeHero({ categories }: { categories: Category[] }) {
@@ -203,14 +204,11 @@ export function HomeHero({ categories }: { categories: Category[] }) {
           </AnimatePresence>
         </div>
 
-        <span className="absolute bottom-5 left-3 text-xs font-bold tracking-widest md:bottom-8 md:left-8 md:text-sm">
-          TUSHAR
+        <span className="absolute bottom-5 left-3 md:bottom-8 md:left-8">
+          <SignatureMark tone="light" layout="corner" />
         </span>
-        <div className="absolute right-3 bottom-5 flex items-baseline gap-4 md:right-8 md:bottom-8 md:gap-6">
+        <div className="absolute right-3 bottom-5 flex items-baseline md:right-8 md:bottom-8">
           <SiteMenu collections={categories} onOpenChange={setMenuOpen} />
-          <span className="text-xs font-bold tracking-widest md:text-sm">
-            GAURAV
-          </span>
         </div>
       </div>
     </main>

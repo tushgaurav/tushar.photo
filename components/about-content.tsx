@@ -5,6 +5,7 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 
 import type { AboutContentData } from "@/lib/content"
+import { SignatureMark } from "@/components/signature-mark"
 import { SiteMenu, type MenuCollection } from "@/components/site-menu"
 
 const ease = [0.32, 0.72, 0, 1] as const
@@ -114,13 +115,8 @@ export function AboutContent({
         </motion.div>
       </div>
 
-      <footer className="mt-16 flex items-center justify-between md:mt-24">
-        <span className="text-xs font-bold tracking-widest md:text-sm">
-          TUSHAR
-        </span>
-        <span className="text-xs font-bold tracking-widest md:text-sm">
-          GAURAV
-        </span>
+      <footer className="mt-16 flex items-center md:mt-24">
+        <SignatureMark tone="light" />
       </footer>
     </main>
   )
