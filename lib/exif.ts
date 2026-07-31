@@ -1,13 +1,14 @@
 /**
- * Turns the EXIF block Cloudinary reports for an uploaded image into the three
- * strings the photo editor shows: camera, lens, and settings.
+ * Turns the EXIF block read from an uploaded image into the three strings the
+ * photo editor shows: camera, lens, and settings.
  *
  * The output deliberately mirrors the hand-written style of the original
  * catalogue ("FUJIFILM X-T4", "23MM F/1.4", "F/4 · 1/250S · ISO 800") so
  * imported photos sit alongside the seeded ones without looking different.
  *
- * Nothing here talks to Cloudinary. Keeping the formatting pure makes it
- * testable, and leaves this module safe to import from anywhere.
+ * Nothing here reads a file or talks to a storage provider. Keeping the
+ * formatting pure makes it testable, and leaves this module safe to import from
+ * anywhere.
  *
  * Every field is best-effort: EXIF is written by hundreds of camera firmwares
  * with no real agreement on key names or value encodings. When a value cannot
@@ -15,7 +16,11 @@
  * which is a better failure than confidently printing the wrong aperture.
  */
 
-/** The `image_metadata` object as returned by the Cloudinary Admin API. */
+/**
+ * A flat bag of EXIF tags. `lib/image-metadata.ts` produces this with `exifr`,
+ * but nothing here depends on that: any provider that hands back tag names
+ * mapped to scalars will do.
+ */
 export type ImageMetadata = Record<string, unknown>
 
 export type ExifFields = {
@@ -35,7 +40,7 @@ const SEPARATOR = " · "
 /**
  * Exact key first, then a case-insensitive match on the last segment, so a
  * namespaced spelling like "Exif.Photo.FNumber" or "EXIF:FNumber" still
- * resolves. Cloudinary reports flat capitalised tag names, but that is not
+ * resolves. `exifr` reports flat capitalised tag names, but that is not
  * contractual and a silent miss here would just leave the fields blank.
  */
 function lookup(metadata: ImageMetadata, key: string): unknown {
@@ -53,8 +58,8 @@ function lookup(metadata: ImageMetadata, key: string): unknown {
 
 /**
  * First readable value among `keys`. Vendors disagree on names — ISO alone
- * appears as ISO, ISOSpeedRatings, and PhotographicSensitivity — and Cloudinary
- * passes numbers through as numbers for some tags and strings for others.
+ * appears as ISO, ISOSpeedRatings, and PhotographicSensitivity — and parsers
+ * pass numbers through as numbers for some tags and strings for others.
  */
 function read(metadata: ImageMetadata, ...keys: string[]): string {
   for (const key of keys) {
@@ -65,6 +70,15 @@ function read(metadata: ImageMetadata, ...keys: string[]): string {
     }
     if (typeof value === "number" && Number.isFinite(value)) {
       return String(value)
+    }
+    /*
+     * `lib/image-metadata.ts` asks exifr not to revive dates, so they arrive as
+     * strings. This is the belt to that braces: a parser configured differently
+     * would otherwise hand `formatYear` a Date it has no branch for, and the
+     * capture year would silently fall back to the collection's.
+     */
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      return value.toISOString()
     }
   }
   return ""

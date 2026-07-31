@@ -8,6 +8,20 @@
       "when": 1785336963805,
       "tag": "0000_unique_celestials",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785348964131,
+      "tag": "0001_easy_the_captain",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785518296289,
+      "tag": "0002_flippant_mulholland_black",
+      "breakpoints": true
     }
   ]
 }

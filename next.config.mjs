@@ -9,7 +9,7 @@ const nextConfig = {
 
   images: {
     /**
-     * Cloudinary already resizes, re-encodes, and CDN-caches every image, so
+     * Cloudflare already resizes, re-encodes, and CDN-caches every image, so
      * routing them through Next's optimizer would add a second, redundant
      * transformation step (and consume Vercel image quota for no benefit).
      */
@@ -17,7 +17,8 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "res.cloudinary.com",
+        hostname:
+          process.env.NEXT_PUBLIC_IMAGE_HOST ?? "images.photo.tushgaurav.com",
         pathname: "/**",
       },
     ],

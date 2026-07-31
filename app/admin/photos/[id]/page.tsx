@@ -67,8 +67,8 @@ async function PhotoBody({ id }: { id: string }) {
               </dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt>Cloudinary ID</dt>
-              <dd className="truncate font-mono">{photo.cloudinaryPublicId}</dd>
+              <dt>Object key</dt>
+              <dd className="truncate font-mono">{photo.storageKey}</dd>
             </div>
           </dl>
         </div>

@@ -1,6 +1,6 @@
 import { asc, count, eq } from "drizzle-orm"
 
-import { photoBlurUrl, photoUrl } from "../cloudinary"
+import { photoUrl } from "../images"
 import { db } from "../db"
 import { aboutPage, categories, photos } from "../db/schema"
 import type { PhotoRow } from "../db/schema"
@@ -15,7 +15,7 @@ import type { PhotoRow } from "../db/schema"
 
 export type AdminPhoto = {
   id: string
-  cloudinaryPublicId: string
+  storageKey: string
   thumbUrl: string
   blurDataUrl: string
   width: number
@@ -46,9 +46,9 @@ export type AdminCategory = {
 function toAdminPhoto(row: PhotoRow): AdminPhoto {
   return {
     id: row.id,
-    cloudinaryPublicId: row.cloudinaryPublicId,
-    thumbUrl: photoUrl(row.cloudinaryPublicId, { width: 400 }),
-    blurDataUrl: photoBlurUrl(row.cloudinaryPublicId),
+    storageKey: row.storageKey,
+    thumbUrl: photoUrl(row.storageKey, { width: 400 }),
+    blurDataUrl: row.blurDataUrl,
     width: row.width,
     height: row.height,
     alt: row.alt,
@@ -112,7 +112,7 @@ export async function getAdminPhoto(id: string) {
   return {
     ...toAdminPhoto(row),
     categoryId: row.categoryId,
-    fullUrl: photoUrl(row.cloudinaryPublicId, { width: 1600 }),
+    fullUrl: photoUrl(row.storageKey, { width: 1600 }),
   }
 }
 
@@ -123,7 +123,7 @@ export async function getAdminAbout() {
   const allPhotos = await db
     .select({
       id: photos.id,
-      cloudinaryPublicId: photos.cloudinaryPublicId,
+      storageKey: photos.storageKey,
       alt: photos.alt,
       categoryName: categories.name,
     })
@@ -136,7 +136,7 @@ export async function getAdminAbout() {
     photoOptions: allPhotos.map((photo) => ({
       id: photo.id,
       label: `${photo.categoryName} — ${photo.alt.slice(0, 60)}`,
-      thumbUrl: photoUrl(photo.cloudinaryPublicId, { width: 200 }),
+      thumbUrl: photoUrl(photo.storageKey, { width: 200 }),
     })),
   }
 }

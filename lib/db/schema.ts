@@ -48,14 +48,21 @@ export const photos = pgTable("photos", {
     .references(() => categories.id, { onDelete: "cascade" }),
 
   /**
-   * Cloudinary public ID rather than a full URL, so transformations (width,
-   * format, quality) stay a render-time decision instead of being baked into
-   * stored data.
+   * R2 object key rather than a full URL, so transformations (width, format,
+   * quality) stay a render-time decision instead of being baked into stored
+   * data.
    */
-  cloudinaryPublicId: text("cloudinary_public_id").notNull(),
+  storageKey: text("storage_key").notNull(),
   /** Intrinsic dimensions, needed to reserve layout space and avoid CLS. */
   width: integer("width").notNull(),
   height: integer("height").notNull(),
+  /**
+   * A 16px-wide WebP inlined as a data URL, used as the `blurDataURL`
+   * placeholder. Stored rather than derived because Cloudflare bills per unique
+   * transformation, and because inlining it costs one fewer request per image
+   * than pointing the placeholder at a URL.
+   */
+  blurDataUrl: text("blur_data_url").notNull().default(""),
 
   alt: text("alt").notNull(),
   caption: text("caption"),

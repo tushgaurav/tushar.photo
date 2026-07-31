@@ -1,27 +1,33 @@
 /**
  * One-time migration of the hardcoded content into Postgres.
  *
- *   pnpm db:seed                    # uploads public/photos/* to Cloudinary
- *   SEED_SKIP_UPLOAD=1 pnpm db:seed # inserts rows only, no Cloudinary calls
+ *   pnpm db:seed                    # uploads public/photos/* to R2
+ *   SEED_SKIP_UPLOAD=1 pnpm db:seed # inserts rows only, no R2 calls
  *
  * Sources:
  *   - categories and photos: lib/photos.ts
  *   - About page copy:        components/about-content.tsx (transcribed below)
  *
  * Idempotent: categories are matched on their unique slug and photos on
- * (category, cloudinary_public_id), so re-running repairs rather than duplicates.
+ * (category, storage_key), so re-running repairs rather than duplicates. Object
+ * keys are derived from the source filename rather than randomly generated,
+ * which is what makes that matching stable across runs.
+ *
+ * Intended for a fresh database. The rows already in production carry random
+ * UUID keys, so this would insert alongside them rather than matching them.
  */
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 
-import { v2 as cloudinary } from "cloudinary"
 import { and, count, eq } from "drizzle-orm"
 
 import { db } from "../lib/db"
 import { aboutPage, categories, photos } from "../lib/db/schema"
+import { describeStoredImage } from "../lib/image-metadata"
 import { categories as sourceCategories } from "../lib/photos"
+import { putObject, r2ConfigError } from "../lib/r2"
 
-const FOLDER = process.env.NEXT_PUBLIC_CLOUDINARY_FOLDER ?? "tushar-photo"
+const KEY_PREFIX = process.env.IMAGE_KEY_PREFIX ?? "photos"
 const SKIP_UPLOAD = process.env.SEED_SKIP_UPLOAD === "1"
 const PUBLIC_DIR = path.join(process.cwd(), "public")
 
@@ -41,21 +47,14 @@ const ABOUT_LINKS = [
 /** The portrait used as the About page hero, as a `/photos/...` src. */
 const ABOUT_HERO_SRC = "/photos/portraits-5.png"
 
-if (!SKIP_UPLOAD) {
-  cloudinary.config({
-    cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  })
-}
-
 /**
  * Read intrinsic dimensions straight from the PNG IHDR chunk.
  *
  * PNG layout: 8-byte signature, then the IHDR chunk whose data begins at byte
  * 16 with width and height as big-endian uint32s. Avoids pulling in an image
- * library just to seed twenty files, and gives SEED_SKIP_UPLOAD a source of
- * real dimensions so rows are never written with placeholder geometry.
+ * library just to seed twenty files, and — unlike asking Cloudflare — works in
+ * SEED_SKIP_UPLOAD mode, where there is no uploaded object to ask about, so rows
+ * are never written with placeholder geometry.
  */
 async function readPngSize(
   absPath: string,
@@ -75,44 +74,49 @@ async function readPngSize(
 }
 
 type UploadResult = {
-  publicId: string
+  storageKey: string
   width: number
   height: number
+  blurDataUrl: string
 }
 
 async function uploadPhoto(src: string): Promise<UploadResult> {
   const basename = path.basename(src, path.extname(src))
-  const publicId = `${FOLDER}/${basename}`
+  const storageKey = `${KEY_PREFIX}/${basename}.png`
   const absPath = path.join(PUBLIC_DIR, src)
 
+  // Read locally either way: it is the only source of dimensions in skip mode,
+  // and a cheap cross-check against what Cloudflare decodes in upload mode.
+  const { width, height } = await readPngSize(absPath)
+
   if (SKIP_UPLOAD) {
-    const { width, height } = await readPngSize(absPath)
-    console.log(`  (skipped upload) ${publicId} ${width}x${height}`)
-    return { publicId, width, height }
+    console.log(`  (skipped upload) ${storageKey} ${width}x${height}`)
+    return { storageKey, width, height, blurDataUrl: "" }
   }
 
-  const result = await cloudinary.uploader.upload(absPath, {
-    public_id: publicId,
-    overwrite: false,
-    // Return the existing asset instead of erroring if it is already there,
-    // which is what makes re-running the seed safe.
-    invalidate: false,
-    resource_type: "image",
+  await putObject({
+    key: storageKey,
+    body: new Uint8Array(await readFile(absPath)),
+    contentType: "image/png",
   })
 
-  console.log(`  uploaded ${result.public_id} ${result.width}x${result.height}`)
-  return {
-    publicId: result.public_id,
-    width: result.width,
-    height: result.height,
-  }
+  // Best-effort: a missing placeholder is not worth failing a seed over.
+  const blurDataUrl = await describeStoredImage(storageKey)
+    .then((stored) => stored.blurDataUrl)
+    .catch(() => "")
+
+  console.log(`  uploaded ${storageKey} ${width}x${height}`)
+  return { storageKey, width, height, blurDataUrl }
 }
 
 async function main() {
-  if (!SKIP_UPLOAD && !process.env.CLOUDINARY_API_SECRET) {
-    throw new Error(
-      "CLOUDINARY_API_SECRET is not set. Configure Cloudinary, or run with SEED_SKIP_UPLOAD=1.",
-    )
+  if (!SKIP_UPLOAD) {
+    const configError = r2ConfigError()
+    if (configError) {
+      throw new Error(
+        `${configError}. Configure R2, or run with SEED_SKIP_UPLOAD=1.`,
+      )
+    }
   }
 
   // src -> photo row id, so the About hero can be linked after insertion.
@@ -144,13 +148,16 @@ async function main() {
       .returning({ id: categories.id })
 
     for (const [photoIndex, sourcePhoto] of source.photos.entries()) {
-      const { publicId, width, height } = await uploadPhoto(sourcePhoto.src)
+      const { storageKey, width, height, blurDataUrl } = await uploadPhoto(
+        sourcePhoto.src,
+      )
 
       const values = {
         categoryId: category.id,
-        cloudinaryPublicId: publicId,
+        storageKey,
         width,
         height,
+        blurDataUrl,
         alt: sourcePhoto.alt,
         caption: sourcePhoto.caption ?? null,
         location: sourcePhoto.location ?? null,
@@ -164,15 +171,15 @@ async function main() {
         published: true,
       }
 
-      // No unique constraint spans (category_id, cloudinary_public_id), so
-      // upsert by hand rather than adding an index that only the seed needs.
+      // No unique constraint spans (category_id, storage_key), so upsert by hand
+      // rather than adding an index that only the seed needs.
       const existing = await db
         .select({ id: photos.id })
         .from(photos)
         .where(
           and(
             eq(photos.categoryId, category.id),
-            eq(photos.cloudinaryPublicId, publicId),
+            eq(photos.storageKey, storageKey),
           ),
         )
         .limit(1)

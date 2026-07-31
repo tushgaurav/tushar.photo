@@ -64,12 +64,23 @@ export const photoSchema = z.object({
 
 export type PhotoInput = z.infer<typeof photoSchema>
 
-/** Metadata handed back by the Cloudinary upload widget. */
+/**
+ * What the uploader reports once a PUT to R2 has succeeded.
+ *
+ * Only the key: dimensions and EXIF are read from the stored object rather than
+ * accepted from the browser, so there is nothing else here to be wrong about.
+ *
+ * The key is shape-checked against what /api/uploads/presign issues — a prefix,
+ * a canonical UUID, an allowed extension. That is not the security boundary on
+ * its own (the object is inspected before any row is written), but it stops a
+ * malformed or attacker-chosen path from reaching R2 at all.
+ */
 export const uploadedPhotoSchema = z.object({
   categoryId: z.string().uuid(),
-  cloudinaryPublicId: trimmed.min(1),
-  width: z.coerce.number().int().positive(),
-  height: z.coerce.number().int().positive(),
+  storageKey: trimmed.regex(
+    /^[a-z0-9][a-z0-9/_-]*\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp|avif)$/,
+    "Not an object key this server issued",
+  ),
 })
 
 export const aboutSchema = z.object({

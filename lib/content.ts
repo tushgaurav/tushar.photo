@@ -2,18 +2,21 @@
  * Canonical shapes for rendered content.
  *
  * These are the view models the public components consume. They deliberately do
- * not mirror the database rows one-to-one: `src` and `blurDataUrl` are derived
- * from the stored Cloudinary public ID, and `index` is a 1-based display
- * position derived from ordering rather than a stored column.
+ * not mirror the database rows one-to-one: `src` is derived from the stored R2
+ * object key, and `index` is a 1-based display position derived from ordering
+ * rather than a stored column.
  */
 
 export type PhotoLayout = "left" | "right" | "full"
 
 export type Photo = {
   id: string
-  /** Cloudinary delivery URL. */
+  /** Cloudflare transformation URL. */
   src: string
-  /** Tiny blurred variant for use as a `blurDataURL` placeholder. */
+  /**
+   * A 16px WebP inlined as a data URL, intended as a `blurDataURL` placeholder.
+   * Carried through but not currently rendered by any component.
+   */
   blurDataUrl: string
   width: number
   height: number

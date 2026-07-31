@@ -6,10 +6,10 @@ import { redirect } from "next/navigation"
 
 import { ABOUT_TAG, CONTENT_TAG, categoryTag } from "@/lib/cache-tags"
 import { requireAdmin } from "@/lib/auth-guard"
-import { fetchImageMetadata } from "@/lib/cloudinary-admin"
 import { db } from "@/lib/db"
 import { aboutPage, categories, photos } from "@/lib/db/schema"
-import { deriveExifFields } from "@/lib/exif"
+import { inspectUploadedImage } from "@/lib/image-metadata"
+import { deleteObject } from "@/lib/r2"
 import {
   aboutSchema,
   categorySchema,
@@ -176,7 +176,7 @@ export async function deleteCategory(categoryId: string): Promise<never> {
     .where(eq(categories.id, categoryId))
     .limit(1)
 
-  // Photo rows cascade. The Cloudinary assets are intentionally left in place;
+  // Photo rows cascade. The stored objects are intentionally left in place;
   // deleting them here would make an accidental category deletion
   // unrecoverable.
   await db.delete(categories).where(eq(categories.id, categoryId))
@@ -208,12 +208,10 @@ export async function reorderCategories(ids: string[]): Promise<ActionResult> {
 // Photos
 // ---------------------------------------------------------------------------
 
-/** Called by the upload widget's success handler, once per uploaded file. */
+/** Called by the uploader once a PUT to R2 has succeeded, once per file. */
 export async function attachUploadedPhoto(input: {
   categoryId: string
-  cloudinaryPublicId: string
-  width: number
-  height: number
+  storageKey: string
 }): Promise<ActionResult & { photoId?: string }> {
   await requireAdmin()
 
@@ -229,16 +227,27 @@ export async function attachUploadedPhoto(input: {
   if (!category) return { ok: false, error: "Category not found." }
 
   /*
-   * Pre-fill the camera details from the file's own EXIF, so the only thing
-   * left to write by hand is the part a machine cannot know.
+   * Read the object rather than trusting the browser's account of it. Two
+   * different kinds of fact come back:
    *
-   * Strictly a convenience: the upload has already succeeded by this point, so
-   * a metadata failure must cost the photographer nothing. Everything falls
-   * back to the previous defaults.
+   *  - dimensions are a precondition. A row with wrong geometry produces a
+   *    permanently misshapen gallery, and failing to decode the file is how we
+   *    learn it is not the image it claimed to be.
+   *  - the EXIF prefill and the blur placeholder are conveniences, and degrade
+   *    to empty rather than failing the upload.
    */
-  const exif = await fetchImageMetadata(parsed.data.cloudinaryPublicId)
-    .then(deriveExifFields)
-    .catch(() => null)
+  const inspection = await inspectUploadedImage(parsed.data.storageKey)
+
+  if (!inspection.ok) {
+    /*
+     * No row will reference this object, so remove it. Deleting a photo through
+     * the admin deliberately leaves its object in place — that is a reversible
+     * decision about content — whereas this one never became content at all,
+     * and leaving it would accumulate bytes nothing can ever find again.
+     */
+    await deleteObject(parsed.data.storageKey).catch(() => {})
+    return { ok: false, error: inspection.error }
+  }
 
   const [{ value: currentMax }] = await db
     .select({ value: max(photos.sortIndex) })
@@ -249,18 +258,19 @@ export async function attachUploadedPhoto(input: {
     .insert(photos)
     .values({
       categoryId: category.id,
-      cloudinaryPublicId: parsed.data.cloudinaryPublicId,
-      width: parsed.data.width,
-      height: parsed.data.height,
+      storageKey: parsed.data.storageKey,
+      width: inspection.width,
+      height: inspection.height,
+      blurDataUrl: inspection.blurDataUrl,
       // Alt text is required for the public site but cannot be known at upload
       // time. Start unpublished so a photo can never reach visitors without a
       // description having been written for it.
       alt: "",
       // The capture year is more precise than the collection's when known.
-      year: exif?.year ?? category.year,
-      camera: exif?.camera ?? "",
-      lens: exif?.lens ?? "",
-      settings: exif?.settings ?? "",
+      year: inspection.exif?.year ?? category.year,
+      camera: inspection.exif?.camera ?? "",
+      lens: inspection.exif?.lens ?? "",
+      settings: inspection.exif?.settings ?? "",
       layout: "full",
       sortIndex: (currentMax ?? -1) + 1,
       published: false,
@@ -360,8 +370,9 @@ export async function setPhotoPublished(
 
 /**
  * Soft delete by default: unpublishing removes a photo from the site while
- * keeping the row and the Cloudinary asset, so a mistake is reversible.
- * Hard deletion is a separate, explicit action.
+ * keeping the row and the stored object, so a mistake is reversible. Hard
+ * deletion is a separate, explicit action — and even it leaves the object, so
+ * the photo can be re-added from the bucket.
  */
 export async function deletePhoto(photoId: string): Promise<ActionResult> {
   await requireAdmin()

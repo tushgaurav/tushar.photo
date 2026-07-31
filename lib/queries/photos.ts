@@ -3,7 +3,7 @@ import { cacheLife, cacheTag } from "next/cache"
 
 import { CONTENT_TAG, categoryTag } from "../cache-tags"
 import type { Category, Photo } from "../content"
-import { photoBlurUrl, photoUrl } from "../cloudinary"
+import { photoUrl } from "../images"
 import { db } from "../db"
 import { categories, photos } from "../db/schema"
 import type { CategoryRow, PhotoRow } from "../db/schema"
@@ -11,8 +11,8 @@ import type { CategoryRow, PhotoRow } from "../db/schema"
 function toPhoto(row: PhotoRow): Photo {
   return {
     id: row.id,
-    src: photoUrl(row.cloudinaryPublicId, { width: 2000 }),
-    blurDataUrl: photoBlurUrl(row.cloudinaryPublicId),
+    src: photoUrl(row.storageKey, { width: 2000 }),
+    blurDataUrl: row.blurDataUrl,
     width: row.width,
     height: row.height,
     alt: row.alt,

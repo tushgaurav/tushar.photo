@@ -89,7 +89,7 @@ async function CategoryBody({ id }: { id: string }) {
         <p className="mb-4 max-w-prose text-sm text-muted-foreground">
           Deleting this collection also deletes its {category.photos.length}{" "}
           photo {category.photos.length === 1 ? "record" : "records"}. The image
-          files stay in Cloudinary, so they can be re-added, but the captions and
+          files stay in storage, so they can be re-added, but the captions and
           settings written here would be lost.
         </p>
         <DeleteCategoryButton

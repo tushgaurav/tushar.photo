@@ -3,7 +3,7 @@ import { cacheLife, cacheTag } from "next/cache"
 
 import { ABOUT_TAG } from "../cache-tags"
 import type { AboutContentData } from "../content"
-import { photoBlurUrl, photoUrl } from "../cloudinary"
+import { photoUrl } from "../images"
 import { db } from "../db"
 import { aboutPage, photos } from "../db/schema"
 
@@ -24,7 +24,8 @@ export async function getAboutContent(): Promise<AboutContentData | null> {
   if (row.heroPhotoId) {
     const [heroRow] = await db
       .select({
-        cloudinaryPublicId: photos.cloudinaryPublicId,
+        storageKey: photos.storageKey,
+        blurDataUrl: photos.blurDataUrl,
         alt: photos.alt,
       })
       .from(photos)
@@ -33,8 +34,8 @@ export async function getAboutContent(): Promise<AboutContentData | null> {
 
     if (heroRow) {
       hero = {
-        src: photoUrl(heroRow.cloudinaryPublicId, { width: 1200 }),
-        blurDataUrl: photoBlurUrl(heroRow.cloudinaryPublicId),
+        src: photoUrl(heroRow.storageKey, { width: 1200 }),
+        blurDataUrl: heroRow.blurDataUrl,
         alt: heroRow.alt,
       }
     }
