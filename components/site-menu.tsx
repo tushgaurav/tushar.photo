@@ -147,13 +147,15 @@ export function SiteMenu({
                   {NAV_LINKS.map((link, i) => {
                     const isCurrent = pathname === link.href
                     return (
-                      // The mask needs room for descenders, or `gear` gets cut.
+                      // Font size lives on the mask so its em padding scales
+                      // with the text: descenders need the room, or `gear`
+                      // gets cut.
                       <div
                         key={link.href}
-                        className="overflow-hidden px-[0.08em] pb-[0.14em]"
+                        className="overflow-hidden px-[0.08em] pb-[0.15em] text-[15vw] leading-none md:text-[8vw]"
                       >
                         <motion.div
-                          initial={{ y: "115%" }}
+                          initial={{ y: "135%" }}
                           animate={{ y: 0 }}
                           transition={{
                             duration: 0.6,
@@ -165,7 +167,7 @@ export function SiteMenu({
                             href={link.href}
                             aria-current={isCurrent ? "page" : undefined}
                             onClick={onItemClick(link.href, link.label)}
-                            className={`block text-[15vw] leading-none font-extrabold tracking-tighter lowercase transition-opacity md:text-[8vw] ${
+                            className={`block font-extrabold tracking-tighter lowercase transition-opacity ${
                               isCurrent
                                 ? "opacity-30 hover:opacity-50"
                                 : "hover:opacity-60"
