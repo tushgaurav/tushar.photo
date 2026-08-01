@@ -109,6 +109,34 @@ export const aboutPage = pgTable("about_page", {
     .defaultNow(),
 })
 
+export type GearItem = {
+  name: string
+  /** One line on what it is used for, or why it earns its place in the bag. */
+  note: string
+  /** Year it joined the bag, shown as `[2024]`. */
+  year: string
+}
+
+export type GearGroup = {
+  title: string
+  items: GearItem[]
+}
+
+/**
+ * Single-row table backing `/gear`. Same reasoning as `about_page`: the kit
+ * list is always read and written as a whole document, so nested groups live
+ * in one JSONB column rather than two extra tables.
+ */
+export const gearPage = pgTable("gear_page", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  year: text("year").notNull().default("2025"),
+  intro: text("intro").notNull().default(""),
+  groups: jsonb("groups").$type<GearGroup[]>().notNull().default([]),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+})
+
 export const categoriesRelations = relations(categories, ({ many }) => ({
   photos: many(photos),
 }))
@@ -132,3 +160,4 @@ export type NewCategoryRow = typeof categories.$inferInsert
 export type PhotoRow = typeof photos.$inferSelect
 export type NewPhotoRow = typeof photos.$inferInsert
 export type AboutPageRow = typeof aboutPage.$inferSelect
+export type GearPageRow = typeof gearPage.$inferSelect

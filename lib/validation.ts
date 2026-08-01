@@ -27,6 +27,7 @@ export const slugSchema = trimmed
  */
 const RESERVED_SLUGS = new Set([
   "about",
+  "gear",
   "admin",
   "api",
   "sign-in",
@@ -106,6 +107,31 @@ export const aboutSchema = z.object({
 })
 
 export type AboutInput = z.infer<typeof aboutSchema>
+
+export const gearSchema = z.object({
+  year: trimmed.regex(/^\d{4}$/, "Four-digit year"),
+  intro: trimmed.max(2000, "Too long").default(""),
+  groups: z
+    .array(
+      z.object({
+        title: trimmed.min(1, "Every group needs a title").max(60, "Too long"),
+        items: z
+          .array(
+            z.object({
+              name: trimmed
+                .min(1, "Every item needs a name")
+                .max(120, "Too long"),
+              note: trimmed.max(300, "Too long").default(""),
+              year: trimmed.regex(/^\d{4}$/, "Four-digit year"),
+            }),
+          )
+          .max(30, "Too many items in one group"),
+      }),
+    )
+    .max(12, "Too many groups"),
+})
+
+export type GearInput = z.infer<typeof gearSchema>
 
 /** Explicit ordering payload for the reorder action. */
 export const reorderSchema = z.object({

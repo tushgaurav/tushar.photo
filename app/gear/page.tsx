@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 
 import { GearContent } from "@/components/gear-content"
+import { getGearContent } from "@/lib/queries/gear"
 import { getCategories } from "@/lib/queries/photos"
 
 export const metadata: Metadata = {
@@ -10,7 +11,10 @@ export const metadata: Metadata = {
 }
 
 export default async function GearPage() {
-  const categories = await getCategories()
+  const [gear, categories] = await Promise.all([
+    getGearContent(),
+    getCategories(),
+  ])
 
-  return <GearContent collections={categories} />
+  return <GearContent gear={gear} collections={categories} />
 }

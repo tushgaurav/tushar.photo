@@ -3,15 +3,17 @@
 import Link from "next/link"
 import { motion } from "framer-motion"
 
-import { GEAR_GROUPS, GEAR_INTRO, GEAR_YEAR } from "@/lib/gear"
+import type { GearContentData } from "@/lib/content"
 import { SignatureMark } from "@/components/signature-mark"
 import { SiteMenu, type MenuCollection } from "@/components/site-menu"
 
 const ease = [0.32, 0.72, 0, 1] as const
 
 export function GearContent({
+  gear,
   collections,
 }: {
+  gear: GearContentData
   collections: MenuCollection[]
 }) {
   return (
@@ -25,7 +27,7 @@ export function GearContent({
         </Link>
         <div className="flex items-baseline gap-4 md:gap-6">
           <span className="text-xs font-medium tracking-wide md:text-sm">
-            {`[${GEAR_YEAR}]`}
+            {`[${gear.year}]`}
           </span>
           <SiteMenu collections={collections} />
         </div>
@@ -49,13 +51,13 @@ export function GearContent({
         transition={{ duration: 0.6, delay: 0.25, ease }}
         className="mt-8 max-w-md text-sm leading-relaxed text-pretty text-muted-foreground md:mt-12 md:text-base"
       >
-        {GEAR_INTRO}
+        {gear.intro}
       </motion.p>
 
       <div className="mt-12 flex flex-col gap-12 md:mt-20 md:gap-16">
-        {GEAR_GROUPS.map((group, groupIndex) => (
+        {gear.groups.map((group, groupIndex) => (
           <motion.section
-            key={group.title}
+            key={groupIndex}
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-60px" }}
@@ -67,9 +69,9 @@ export function GearContent({
             </h2>
 
             <ul className="flex flex-col md:col-span-4">
-              {group.items.map((item) => (
+              {group.items.map((item, itemIndex) => (
                 <li
-                  key={item.name}
+                  key={itemIndex}
                   className="flex flex-col gap-1 border-t border-foreground/15 py-5 md:flex-row md:items-baseline md:justify-between md:gap-12"
                 >
                   <p className="text-base font-medium md:w-1/3 md:text-lg">

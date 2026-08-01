@@ -4,16 +4,17 @@ import { and, asc, eq, gt, max, ne, sql } from "drizzle-orm"
 import { revalidateTag, updateTag } from "next/cache"
 import { redirect } from "next/navigation"
 
-import { ABOUT_TAG, CONTENT_TAG, categoryTag } from "@/lib/cache-tags"
+import { ABOUT_TAG, CONTENT_TAG, GEAR_TAG, categoryTag } from "@/lib/cache-tags"
 import { requireAdmin } from "@/lib/auth-guard"
 import { db } from "@/lib/db"
-import { aboutPage, categories, photos } from "@/lib/db/schema"
+import { aboutPage, categories, gearPage, photos } from "@/lib/db/schema"
 import { inspectUploadedImage } from "@/lib/image-metadata"
 import { deleteObject } from "@/lib/r2"
 import {
   aboutSchema,
   categorySchema,
   emptyToNull,
+  gearSchema,
   photoSchema,
   reorderSchema,
   uploadedPhotoSchema,
@@ -506,6 +507,60 @@ function parseLinks(formData: FormData) {
 }
 
 // ---------------------------------------------------------------------------
+// Gear page
+// ---------------------------------------------------------------------------
+
+export async function updateGear(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireAdmin()
+
+  /*
+   * Groups are a nested variable-length structure, so the form submits them as
+   * one JSON field rather than repeated inputs. The payload is still fully
+   * validated by gearSchema below — the JSON.parse only establishes shape.
+   */
+  let groups: unknown
+  try {
+    groups = JSON.parse(String(formData.get("groups") ?? "[]"))
+  } catch {
+    return { ok: false, error: "Could not read the gear groups." }
+  }
+
+  const parsed = gearSchema.safeParse({
+    year: formData.get("year"),
+    intro: formData.get("intro") ?? "",
+    groups,
+  })
+
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Please fix the highlighted fields.",
+      fieldErrors: fieldErrorsOf(parsed.error),
+    }
+  }
+
+  const [existing] = await db
+    .select({ id: gearPage.id })
+    .from(gearPage)
+    .limit(1)
+
+  if (existing) {
+    await db
+      .update(gearPage)
+      .set({ ...parsed.data, updatedAt: new Date() })
+      .where(eq(gearPage.id, existing.id))
+  } else {
+    await db.insert(gearPage).values(parsed.data)
+  }
+
+  updateTag(GEAR_TAG)
+  return { ok: true }
+}
+
+// ---------------------------------------------------------------------------
 
 async function slugForCategory(categoryId: string): Promise<string | undefined> {
   const [row] = await db
@@ -524,5 +579,6 @@ export async function revalidateEverything(): Promise<ActionResult> {
   await requireAdmin()
   revalidateTag(CONTENT_TAG, "max")
   revalidateTag(ABOUT_TAG, "max")
+  revalidateTag(GEAR_TAG, "max")
   return { ok: true }
 }

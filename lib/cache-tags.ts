@@ -14,3 +14,6 @@ export function categoryTag(slug: string): string {
 
 /** The About page document. */
 export const ABOUT_TAG = "about"
+
+/** The Gear page document. */
+export const GEAR_TAG = "gear"

@@ -7,6 +7,8 @@
  * rather than a stored column.
  */
 
+import type { GearGroup } from "./db/schema"
+
 export type PhotoLayout = "left" | "right" | "full"
 
 export type Photo = {
@@ -39,6 +41,12 @@ export type Category = {
   year: string
   intro: string
   photos: Photo[]
+}
+
+export type GearContentData = {
+  year: string
+  intro: string
+  groups: GearGroup[]
 }
 
 export type AboutContentData = {

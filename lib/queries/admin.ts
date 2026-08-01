@@ -2,7 +2,7 @@ import { asc, count, eq } from "drizzle-orm"
 
 import { photoUrl } from "../images"
 import { db } from "../db"
-import { aboutPage, categories, photos } from "../db/schema"
+import { aboutPage, categories, gearPage, photos } from "../db/schema"
 import type { PhotoRow } from "../db/schema"
 
 /**
@@ -139,6 +139,11 @@ export async function getAdminAbout() {
       thumbUrl: photoUrl(photo.storageKey, { width: 200 }),
     })),
   }
+}
+
+export async function getAdminGear() {
+  const [row] = await db.select().from(gearPage).limit(1)
+  return row ?? null
 }
 
 export async function getAdminStats() {
