@@ -7,7 +7,7 @@ import {
   updateCategory,
   type ActionResult,
 } from "@/app/admin/actions"
-import { Checkbox, Field, TextArea, TextInput } from "@/components/admin/field"
+import { Checkbox, Field, Select, TextArea, TextInput } from "@/components/admin/field"
 import { Button } from "@/components/ui/button"
 
 type CategoryFormValues = {
@@ -17,9 +17,28 @@ type CategoryFormValues = {
   year: string
   intro: string
   published: boolean
+  parentId: string | null
 }
 
-export function CategoryForm({ category }: { category?: CategoryFormValues }) {
+export type ParentOption = {
+  id: string
+  name: string
+}
+
+export function CategoryForm({
+  category,
+  parentOptions = [],
+  defaultParentId = null,
+  parentLockedReason,
+}: {
+  category?: CategoryFormValues
+  /** Top-level collections this one may nest under. */
+  parentOptions?: ParentOption[]
+  /** Preselected parent for new sub-collections (`?parent=` link). */
+  defaultParentId?: string | null
+  /** When set, the parent cannot be changed and this explains why. */
+  parentLockedReason?: string
+}) {
   const action = category
     ? updateCategory.bind(null, category.id)
     : createCategory
@@ -58,6 +77,29 @@ export function CategoryForm({ category }: { category?: CategoryFormValues }) {
           pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
           invalid={!!errors?.slug}
         />
+      </Field>
+
+      <Field
+        label="Parent collection"
+        hint={
+          parentLockedReason ??
+          "Nest this under a top-level collection, e.g. an event under Events. Its URL becomes /parent/slug."
+        }
+        errors={errors?.parentId}
+      >
+        <Select
+          name="parentId"
+          defaultValue={category?.parentId ?? defaultParentId ?? ""}
+          disabled={!!parentLockedReason}
+          invalid={!!errors?.parentId}
+        >
+          <option value="">None (top-level)</option>
+          {parentOptions.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.name}
+            </option>
+          ))}
+        </Select>
       </Field>
 
       <Field label="Year" errors={errors?.year}>

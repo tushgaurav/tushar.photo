@@ -9,6 +9,7 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core"
 
 /**
@@ -23,6 +24,16 @@ export const categories = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     slug: text("slug").notNull(),
     name: text("name").notNull(),
+    /**
+     * Self-reference enabling one level of nesting: a top-level collection
+     * (null) can contain sub-collections (set). Sub-collections cannot have
+     * children of their own — enforced in the admin actions, not here.
+     * `restrict` so deleting a parent cannot silently cascade through its
+     * sub-collections and take every photo record with it.
+     */
+    parentId: uuid("parent_id").references((): AnyPgColumn => categories.id, {
+      onDelete: "restrict",
+    }),
     /**
      * Display order. Replaces the hand-maintained `index` field from the old
      * `lib/photos.ts`, and also drives prev/next navigation between galleries.
@@ -137,8 +148,14 @@ export const gearPage = pgTable("gear_page", {
     .defaultNow(),
 })
 
-export const categoriesRelations = relations(categories, ({ many }) => ({
+export const categoriesRelations = relations(categories, ({ one, many }) => ({
   photos: many(photos),
+  parent: one(categories, {
+    fields: [categories.parentId],
+    references: [categories.id],
+    relationName: "categoryChildren",
+  }),
+  children: many(categories, { relationName: "categoryChildren" }),
 }))
 
 export const photosRelations = relations(photos, ({ one }) => ({

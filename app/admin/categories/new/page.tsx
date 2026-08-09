@@ -2,9 +2,26 @@ import Link from "next/link"
 
 import { CategoryForm } from "@/components/admin/category-form"
 import { requireAdmin } from "@/lib/auth-guard"
+import { listCategories } from "@/lib/queries/admin"
 
-export default async function NewCategoryPage() {
+export default async function NewCategoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ parent?: string }>
+}) {
   await requireAdmin()
+
+  const [{ parent }, categories] = await Promise.all([
+    searchParams,
+    listCategories(),
+  ])
+
+  const parentOptions = categories
+    .filter((category) => category.parentId === null)
+    .map((category) => ({ id: category.id, name: category.name }))
+
+  const defaultParentId =
+    parentOptions.find((option) => option.id === parent)?.id ?? null
 
   return (
     <div className="flex max-w-2xl flex-col gap-8">
@@ -20,7 +37,10 @@ export default async function NewCategoryPage() {
         </h1>
       </header>
 
-      <CategoryForm />
+      <CategoryForm
+        parentOptions={parentOptions}
+        defaultParentId={defaultParentId}
+      />
     </div>
   )
 }

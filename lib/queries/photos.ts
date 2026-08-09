@@ -2,7 +2,7 @@ import { asc, eq } from "drizzle-orm"
 import { cacheLife, cacheTag } from "next/cache"
 
 import { CONTENT_TAG, categoryTag } from "../cache-tags"
-import type { Category, Photo } from "../content"
+import type { Category, Photo, SubcollectionSummary } from "../content"
 import { photoUrl } from "../images"
 import { db } from "../db"
 import { categories, photos } from "../db/schema"
@@ -26,34 +26,46 @@ function toPhoto(row: PhotoRow): Photo {
   }
 }
 
+type RowWithPhotos = CategoryRow & { photos: PhotoRow[] }
+
 function toCategory(
-  row: CategoryRow,
-  photoRows: PhotoRow[],
+  row: RowWithPhotos,
   displayIndex: number,
+  parentSlug: string | null,
+  children: SubcollectionSummary[],
 ): Category {
   return {
     id: row.id,
     slug: row.slug,
+    path: parentSlug ? `${parentSlug}/${row.slug}` : row.slug,
     name: row.name,
     index: displayIndex,
     year: row.year,
     intro: row.intro,
-    photos: photoRows.map(toPhoto),
+    photos: row.photos.map(toPhoto),
+    parentSlug,
+    children,
+  }
+}
+
+function toSummary(row: RowWithPhotos, parentSlug: string): SubcollectionSummary {
+  return {
+    id: row.id,
+    slug: row.slug,
+    path: `${parentSlug}/${row.slug}`,
+    name: row.name,
+    year: row.year,
+    photoCount: row.photos.length,
+    cover: row.photos[0] ? toPhoto(row.photos[0]) : null,
   }
 }
 
 /**
- * Every published category with its published photos, in display order.
- *
- * Fetched as a single grouped query rather than per-category, because the home
- * page needs all of them at once to build its filmstrip.
+ * Every published category (top-level and sub-collections) with its published
+ * photos, in display order. One grouped query; the tree is assembled in JS.
  */
-export async function getCategories(): Promise<Category[]> {
-  "use cache"
-  cacheTag(CONTENT_TAG)
-  cacheLife("max")
-
-  const rows = await db.query.categories.findMany({
+async function loadPublishedRows(): Promise<RowWithPhotos[]> {
+  return db.query.categories.findMany({
     where: eq(categories.published, true),
     orderBy: [asc(categories.sortIndex), asc(categories.createdAt)],
     with: {
@@ -63,8 +75,32 @@ export async function getCategories(): Promise<Category[]> {
       },
     },
   })
+}
 
-  return rows.map((row, i) => toCategory(row, row.photos, i + 1))
+function childrenOf(rows: RowWithPhotos[], parent: RowWithPhotos) {
+  return rows.filter((row) => row.parentId === parent.id)
+}
+
+/**
+ * Every published top-level collection, each carrying summaries of its
+ * sub-collections. The home page needs all of them at once for its filmstrip.
+ */
+export async function getCategories(): Promise<Category[]> {
+  "use cache"
+  cacheTag(CONTENT_TAG)
+  cacheLife("max")
+
+  const rows = await loadPublishedRows()
+  const topLevel = rows.filter((row) => row.parentId === null)
+
+  return topLevel.map((row, i) =>
+    toCategory(
+      row,
+      i + 1,
+      null,
+      childrenOf(rows, row).map((child) => toSummary(child, row.slug)),
+    ),
+  )
 }
 
 export async function getCategory(slug: string): Promise<Category | null> {
@@ -76,6 +112,51 @@ export async function getCategory(slug: string): Promise<Category | null> {
   // shown elsewhere. A standalone lookup could not know its own position.
   const all = await getCategories()
   return all.find((category) => category.slug === slug) ?? null
+}
+
+/**
+ * A sub-collection addressed as `/parentSlug/childSlug`, with its parent and
+ * its siblings resolved in one pass so the page can render breadcrumb and
+ * prev/next without further lookups.
+ */
+export async function getSubcollection(
+  parentSlug: string,
+  childSlug: string,
+): Promise<{
+  category: Category
+  parent: Category
+  prev: Category | null
+  next: Category | null
+  siblingCount: number
+} | null> {
+  "use cache"
+  cacheTag(CONTENT_TAG, categoryTag(childSlug))
+  cacheLife("max")
+
+  const rows = await loadPublishedRows()
+  const parentRow = rows.find(
+    (row) => row.slug === parentSlug && row.parentId === null,
+  )
+  if (!parentRow) return null
+
+  const siblings = childrenOf(rows, parentRow).map((row, i) =>
+    toCategory(row, i + 1, parentSlug, []),
+  )
+
+  const index = siblings.findIndex((sibling) => sibling.slug === childSlug)
+  if (index === -1) return null
+
+  const parent = await getCategory(parentSlug)
+  if (!parent) return null
+
+  const wrap = siblings.length >= 2
+  return {
+    category: siblings[index],
+    parent,
+    prev: wrap ? siblings[(index - 1 + siblings.length) % siblings.length] : null,
+    next: wrap ? siblings[(index + 1) % siblings.length] : null,
+    siblingCount: siblings.length,
+  }
 }
 
 /**
@@ -102,17 +183,30 @@ export async function getAdjacentCategories(
   }
 }
 
-/** Slugs for `generateStaticParams`. */
+/** Top-level slugs for `generateStaticParams`. */
 export async function getCategorySlugs(): Promise<string[]> {
   "use cache"
   cacheTag(CONTENT_TAG)
   cacheLife("max")
 
-  const rows = await db
-    .select({ slug: categories.slug })
-    .from(categories)
-    .where(eq(categories.published, true))
-    .orderBy(asc(categories.sortIndex))
+  const rows = await loadPublishedRows()
+  return rows.filter((row) => row.parentId === null).map((row) => row.slug)
+}
 
-  return rows.map((row) => row.slug)
+/** `{ category, subcategory }` pairs for `generateStaticParams`. */
+export async function getSubcollectionParams(): Promise<
+  { category: string; subcategory: string }[]
+> {
+  "use cache"
+  cacheTag(CONTENT_TAG)
+  cacheLife("max")
+
+  const rows = await loadPublishedRows()
+  const slugById = new Map(rows.map((row) => [row.id, row.slug]))
+
+  return rows.flatMap((row) => {
+    if (!row.parentId) return []
+    const parentSlug = slugById.get(row.parentId)
+    return parentSlug ? [{ category: parentSlug, subcategory: row.slug }] : []
+  })
 }

@@ -4,12 +4,14 @@ import { notFound } from "next/navigation"
 import { Suspense } from "react"
 
 import { CategoryForm } from "@/components/admin/category-form"
+import { CategoryReorderList } from "@/components/admin/category-reorder-list"
 import { DeleteCategoryButton } from "@/components/admin/delete-category-button"
 import { PendingRows } from "@/components/admin/pending-rows"
 import { PhotoManager } from "@/components/admin/photo-manager"
+import { Button } from "@/components/ui/button"
 import { ADMIN_SAMPLE_PARAMS } from "@/lib/admin-sample-params"
 import { requireAdmin } from "@/lib/auth-guard"
-import { getAdminCategory } from "@/lib/queries/admin"
+import { getAdminCategory, listCategories } from "@/lib/queries/admin"
 
 export function generateStaticParams() {
   return ADMIN_SAMPLE_PARAMS
@@ -32,8 +34,24 @@ export default async function AdminCategoryPage({
 async function CategoryBody({ id }: { id: string }) {
   await requireAdmin()
 
-  const category = await getAdminCategory(id)
+  const [category, allCategories] = await Promise.all([
+    getAdminCategory(id),
+    listCategories(),
+  ])
   if (!category) notFound()
+
+  const children = allCategories.filter((c) => c.parentId === id)
+  const parent = category.parentId
+    ? (allCategories.find((c) => c.id === category.parentId) ?? null)
+    : null
+
+  const parentOptions = allCategories
+    .filter((c) => c.parentId === null && c.id !== id)
+    .map((c) => ({ id: c.id, name: c.name }))
+
+  const livePath = parent
+    ? `/${parent.slug}/${category.slug}`
+    : `/${category.slug}`
 
   return (
     <div className="flex flex-col gap-14">
@@ -49,7 +67,7 @@ async function CategoryBody({ id }: { id: string }) {
             {category.name}
           </h1>
           <Link
-            href={`/${category.slug}`}
+            href={livePath}
             target="_blank"
             rel="noreferrer"
             className="text-xs font-bold tracking-widest uppercase transition-opacity hover:opacity-50"
@@ -71,9 +89,44 @@ async function CategoryBody({ id }: { id: string }) {
             year: category.year,
             intro: category.intro,
             published: category.published,
+            parentId: category.parentId,
           }}
+          parentOptions={parentOptions}
+          parentLockedReason={
+            children.length > 0
+              ? "This collection has sub-collections, so it stays top-level."
+              : undefined
+          }
         />
       </section>
+
+      {!category.parentId ? (
+        <section>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <h2 className="text-xs font-bold tracking-widest uppercase text-muted-foreground">
+              Sub-collections
+            </h2>
+            <Button
+              render={
+                <Link href={`/admin/categories/new?parent=${category.id}`} />
+              }
+              size="sm"
+              variant="outline"
+            >
+              New Sub-collection
+            </Button>
+          </div>
+          {children.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              None yet. Sub-collections show as a card grid on this
+              collection&apos;s page — useful for grouping events, each with its
+              own photos.
+            </p>
+          ) : (
+            <CategoryReorderList categories={children} />
+          )}
+        </section>
+      ) : null}
 
       <section>
         <h2 className="mb-6 text-xs font-bold tracking-widest uppercase text-muted-foreground">

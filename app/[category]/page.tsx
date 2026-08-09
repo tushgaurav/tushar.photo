@@ -50,6 +50,7 @@ export default async function CategoryPage({
       prev={adjacent?.prev ?? null}
       next={adjacent?.next ?? null}
       collections={all}
+      subcollections={cat.children}
     />
   )
 }

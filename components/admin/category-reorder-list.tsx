@@ -8,8 +8,11 @@ import type { AdminCategory } from "@/lib/queries/admin"
 
 export function CategoryReorderList({
   categories,
+  childrenByParent = {},
 }: {
   categories: AdminCategory[]
+  /** Sub-collections rendered indented under their parent, keyed by parent id. */
+  childrenByParent?: Record<string, AdminCategory[]>
 }) {
   const {
     items,
@@ -46,10 +49,11 @@ export function CategoryReorderList({
               onDragOver(category.id)
             }}
             onDragEnd={onDragEnd}
-            className={`flex items-center gap-4 py-3 ${
+            className={`flex flex-col py-3 ${
               draggingId === category.id ? "opacity-40" : ""
             }`}
           >
+            <div className="flex items-center gap-4">
             <span
               aria-hidden="true"
               className="cursor-grab select-none px-1 text-muted-foreground"
@@ -105,6 +109,37 @@ export function CategoryReorderList({
                 ↓
               </button>
             </span>
+            </div>
+
+            {(childrenByParent[category.id]?.length ?? 0) > 0 ? (
+              <ul className="mt-1 flex flex-col gap-1 pl-14">
+                {childrenByParent[category.id].map((child) => (
+                  <li key={child.id}>
+                    <Link
+                      href={`/admin/categories/${child.id}`}
+                      className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-1 transition-opacity hover:opacity-60"
+                    >
+                      <span aria-hidden="true" className="text-muted-foreground">
+                        └
+                      </span>
+                      <span className="text-sm lowercase">{child.name}</span>
+                      <span className="font-mono text-xs text-muted-foreground">
+                        /{category.slug}/{child.slug}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {child.photoCount}{" "}
+                        {child.photoCount === 1 ? "photo" : "photos"}
+                      </span>
+                      {!child.published ? (
+                        <span className="text-xs font-bold tracking-widest uppercase text-destructive">
+                          Draft
+                        </span>
+                      ) : null}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </li>
         ))}
       </ul>

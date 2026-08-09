@@ -4,10 +4,19 @@ import { useCallback, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
-import type { Category } from "@/lib/content"
+import type { Category, Photo } from "@/lib/content"
 import { usePageTransition } from "@/components/page-transition"
 import { SignatureMark } from "@/components/signature-mark"
 import { SiteMenu } from "@/components/site-menu"
+
+/**
+ * A collection that only holds sub-collections (e.g. "events") has no photos
+ * of its own, so the filmstrip borrows its sub-collections' covers instead.
+ */
+function heroPhotos(category: Category): Photo[] {
+  if (category.photos.length > 0) return category.photos
+  return category.children.flatMap((child) => (child.cover ? [child.cover] : []))
+}
 
 export function HomeHero({ categories }: { categories: Category[] }) {
   const [active, setActive] = useState(0)
@@ -44,7 +53,7 @@ export function HomeHero({ categories }: { categories: Category[] }) {
   // state rather than an impossible one.
   if (!category) return null
 
-  const photos = category.photos
+  const photos = heroPhotos(category)
   const centerPhoto = photos[0]
 
   if (!centerPhoto) return null
@@ -58,7 +67,10 @@ export function HomeHero({ categories }: { categories: Category[] }) {
   const otherFirstPhotos = Array.from(
     { length: Math.max(categories.length - 1, 0) },
     (_, offset) => categories[(active + offset + 1) % categories.length],
-  ).flatMap((c) => (c?.photos[0] ? [c.photos[0]] : []))
+  ).flatMap((c) => {
+    const first = c ? heroPhotos(c)[0] : undefined
+    return first ? [first] : []
+  })
 
   const leftThumbs = photos.slice(1, 4)
   const rightThumbs = [...photos.slice(4, 5), ...otherFirstPhotos].slice(0, 3)

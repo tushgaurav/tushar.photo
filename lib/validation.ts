@@ -43,6 +43,8 @@ export const categorySchema = z.object({
   year: trimmed.regex(/^\d{4}$/, "Four-digit year"),
   intro: trimmed.max(2000, "Too long").default(""),
   published: z.boolean().default(true),
+  /** Top-level collection this one nests under; null for top-level. */
+  parentId: z.string().uuid().nullable().default(null),
 })
 
 export type CategoryInput = z.infer<typeof categorySchema>

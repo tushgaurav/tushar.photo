@@ -10,6 +10,14 @@ export default async function AdminCategoriesPage() {
 
   const categories = await listCategories()
 
+  const topLevel = categories.filter((category) => category.parentId === null)
+  const childrenByParent: Record<string, typeof categories> = {}
+  for (const category of categories) {
+    if (!category.parentId) continue
+    childrenByParent[category.parentId] ??= []
+    childrenByParent[category.parentId].push(category)
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -32,7 +40,10 @@ export default async function AdminCategoriesPage() {
           No collections yet. Create one to get started.
         </p>
       ) : (
-        <CategoryReorderList categories={categories} />
+        <CategoryReorderList
+          categories={topLevel}
+          childrenByParent={childrenByParent}
+        />
       )}
     </div>
   )

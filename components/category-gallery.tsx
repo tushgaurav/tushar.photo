@@ -3,10 +3,11 @@
 import { useRef, useState } from "react"
 import Image from "next/image"
 import { motion, useScroll, useTransform } from "framer-motion"
-import type { Category, Photo } from "@/lib/content"
+import type { Category, Photo, SubcollectionSummary } from "@/lib/content"
 import { Lightbox } from "@/components/lightbox"
 import { TransitionLink } from "@/components/page-transition"
 import { SiteMenu, type MenuCollection } from "@/components/site-menu"
+import { SubcollectionGrid } from "@/components/subcollection-grid"
 
 const ease = [0.32, 0.72, 0, 1] as const
 
@@ -200,13 +201,24 @@ export function CategoryGallery({
   prev,
   next,
   collections,
+  subcollections = [],
+  backHref = "/",
+  backLabel = "[ ← INDEX ]",
+  counterTotal,
 }: {
   category: Category
   /** Null when there is only one category, so there is nowhere to navigate. */
   prev: Category | null
   next: Category | null
-  /** Every category, for the menu and the `01/04` footer count. */
+  /** Every top-level category, for the menu and the `01/04` footer count. */
   collections: MenuCollection[]
+  /** When set, a card grid of sub-collections renders above the photos. */
+  subcollections?: SubcollectionSummary[]
+  /** Where the top-left back link points; sub-collections point at their parent. */
+  backHref?: string
+  backLabel?: string
+  /** Footer counter denominator. Sub-collections count siblings, not collections. */
+  counterTotal?: number
 }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
@@ -216,10 +228,10 @@ export function CategoryGallery({
       <header className="mb-12 md:mb-20">
         <div className="flex items-start justify-between">
           <TransitionLink
-            href="/"
+            href={backHref}
             className="text-xs font-bold tracking-widest transition-opacity hover:opacity-50 md:text-sm"
           >
-            {"[ ← INDEX ]"}
+            {backLabel}
           </TransitionLink>
           <div className="flex items-baseline gap-4 md:gap-6">
             <motion.span
@@ -256,6 +268,13 @@ export function CategoryGallery({
         </div>
       </header>
 
+      {/* Sub-collections */}
+      {subcollections.length > 0 ? (
+        <div className={category.photos.length > 0 ? "mb-16 md:mb-28" : ""}>
+          <SubcollectionGrid subcollections={subcollections} />
+        </div>
+      ) : null}
+
       {/* Photos */}
       <div className="flex flex-col gap-16 md:gap-28">
         {category.photos.map((photo, i) => (
@@ -271,12 +290,12 @@ export function CategoryGallery({
       {/* Footer nav */}
       <footer className="mt-16 flex items-center justify-between md:mt-24">
         <span className="text-xs font-bold tracking-widest md:text-sm">
-          {`${pad(category.index)}/${pad(collections.length)}`}
+          {`${pad(category.index)}/${pad(counterTotal ?? collections.length)}`}
         </span>
         {next && prev ? (
           <nav className="flex items-center gap-2 text-xs font-bold tracking-widest md:text-sm">
             <TransitionLink
-              href={`/${next.slug}`}
+              href={`/${next.path}`}
               label={next.name}
               data-cursor="next"
               className="transition-opacity hover:opacity-50"
@@ -285,7 +304,7 @@ export function CategoryGallery({
             </TransitionLink>
             <span aria-hidden="true">/</span>
             <TransitionLink
-              href={`/${prev.slug}`}
+              href={`/${prev.path}`}
               label={prev.name}
               data-cursor="prev"
               className="transition-opacity hover:opacity-50"

@@ -19,6 +19,7 @@ export function DeleteCategoryButton({
 }) {
   const [confirming, setConfirming] = useState(false)
   const [typed, setTyped] = useState("")
+  const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
 
   if (!confirming) {
@@ -47,7 +48,9 @@ export function DeleteCategoryButton({
           disabled={typed !== categoryName || pending}
           onClick={() =>
             startTransition(async () => {
-              await deleteCategory(categoryId)
+              // On success this never resolves — the action redirects away.
+              const result = await deleteCategory(categoryId)
+              if (!result.ok) setError(result.error)
             })
           }
         >
@@ -58,11 +61,17 @@ export function DeleteCategoryButton({
           onClick={() => {
             setConfirming(false)
             setTyped("")
+            setError(null)
           }}
         >
           Cancel
         </Button>
       </div>
+      {error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
     </div>
   )
 }

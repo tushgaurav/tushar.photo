@@ -32,15 +32,43 @@ export type Photo = {
   settings: string
 }
 
+/**
+ * Card-sized summary of a sub-collection, used on the parent's index page and
+ * for the home filmstrip fallback when a parent has no photos of its own.
+ */
+export type SubcollectionSummary = {
+  id: string
+  slug: string
+  /** Route path without leading slash, e.g. `events/wedding-goa-2026`. */
+  path: string
+  name: string
+  year: string
+  photoCount: number
+  /** First published photo, or null for an empty sub-collection. */
+  cover: Photo | null
+}
+
 export type Category = {
   id: string
   slug: string
+  /**
+   * Route path without leading slash: equal to `slug` for top-level
+   * collections, `parentSlug/slug` for sub-collections.
+   */
+  path: string
   name: string
-  /** 1-based display position, shown as `01/04` in the gallery footer. */
+  /**
+   * 1-based display position, shown as `01/04` in the gallery footer.
+   * For sub-collections this is the position among siblings.
+   */
   index: number
   year: string
   intro: string
   photos: Photo[]
+  /** Slug of the parent collection, null for top-level collections. */
+  parentSlug: string | null
+  /** Published sub-collections in display order. Empty for sub-collections. */
+  children: SubcollectionSummary[]
 }
 
 export type GearContentData = {

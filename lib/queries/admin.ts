@@ -36,6 +36,7 @@ export type AdminCategory = {
   id: string
   slug: string
   name: string
+  parentId: string | null
   sortIndex: number
   year: string
   intro: string
@@ -70,6 +71,7 @@ export async function listCategories(): Promise<AdminCategory[]> {
       id: categories.id,
       slug: categories.slug,
       name: categories.name,
+      parentId: categories.parentId,
       sortIndex: categories.sortIndex,
       year: categories.year,
       intro: categories.intro,

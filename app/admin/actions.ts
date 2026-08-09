@@ -56,6 +56,51 @@ function fieldErrorsOf(error: {
 // Categories
 // ---------------------------------------------------------------------------
 
+/**
+ * Nesting is one level deep: a parent must itself be top-level. Returns an
+ * error string, or null when the assignment is valid.
+ */
+async function validateParent(
+  parentId: string | null,
+  categoryId?: string,
+): Promise<string | null> {
+  if (!parentId) return null
+
+  if (categoryId && parentId === categoryId) {
+    return "A collection cannot be its own parent."
+  }
+
+  const [parent] = await db
+    .select({ parentId: categories.parentId })
+    .from(categories)
+    .where(eq(categories.id, parentId))
+    .limit(1)
+
+  if (!parent) return "Parent collection not found."
+  if (parent.parentId) {
+    return "Sub-collections cannot contain their own sub-collections."
+  }
+
+  if (categoryId) {
+    const [child] = await db
+      .select({ id: categories.id })
+      .from(categories)
+      .where(eq(categories.parentId, categoryId))
+      .limit(1)
+
+    if (child) {
+      return "This collection has sub-collections, so it must stay top-level."
+    }
+  }
+
+  return null
+}
+
+function parentIdFromForm(formData: FormData): string | null {
+  const value = formData.get("parentId")
+  return typeof value === "string" && value.length > 0 ? value : null
+}
+
 export async function createCategory(
   _prev: ActionResult | null,
   formData: FormData,
@@ -68,6 +113,7 @@ export async function createCategory(
     year: formData.get("year"),
     intro: formData.get("intro") ?? "",
     published: formData.get("published") === "on",
+    parentId: parentIdFromForm(formData),
   })
 
   if (!parsed.success) {
@@ -76,6 +122,11 @@ export async function createCategory(
       error: "Please fix the highlighted fields.",
       fieldErrors: fieldErrorsOf(parsed.error),
     }
+  }
+
+  const parentError = await validateParent(parsed.data.parentId)
+  if (parentError) {
+    return { ok: false, error: parentError, fieldErrors: { parentId: [parentError] } }
   }
 
   const duplicate = await db
@@ -120,6 +171,7 @@ export async function updateCategory(
     year: formData.get("year"),
     intro: formData.get("intro") ?? "",
     published: formData.get("published") === "on",
+    parentId: parentIdFromForm(formData),
   })
 
   if (!parsed.success) {
@@ -137,6 +189,11 @@ export async function updateCategory(
     .limit(1)
 
   if (!existing) return { ok: false, error: "Category not found." }
+
+  const parentError = await validateParent(parsed.data.parentId, categoryId)
+  if (parentError) {
+    return { ok: false, error: parentError, fieldErrors: { parentId: [parentError] } }
+  }
 
   const duplicate = await db
     .select({ id: categories.id })
@@ -168,7 +225,9 @@ export async function updateCategory(
   return { ok: true }
 }
 
-export async function deleteCategory(categoryId: string): Promise<never> {
+export async function deleteCategory(
+  categoryId: string,
+): Promise<ActionResult> {
   await requireAdmin()
 
   const [existing] = await db
@@ -176,6 +235,21 @@ export async function deleteCategory(categoryId: string): Promise<never> {
     .from(categories)
     .where(eq(categories.id, categoryId))
     .limit(1)
+
+  // The DB would refuse anyway (parent_id is `restrict`), but failing here
+  // gives the editor an explanation instead of a constraint violation.
+  const [child] = await db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(eq(categories.parentId, categoryId))
+    .limit(1)
+
+  if (child) {
+    return {
+      ok: false,
+      error: "Delete or move its sub-collections first.",
+    }
+  }
 
   // Photo rows cascade. The stored objects are intentionally left in place;
   // deleting them here would make an accidental category deletion
