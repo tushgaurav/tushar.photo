@@ -8,6 +8,7 @@ import { toast } from "sonner"
 
 import {
   deletePhoto,
+  publishAllPhotos,
   reorderPhotos,
   setPhotoPublished,
 } from "@/app/admin/actions"
@@ -23,6 +24,8 @@ export function PhotoManager({
   categoryId: string
   photos: AdminPhoto[]
 }) {
+  const router = useRouter()
+  const [publishingAll, startPublishAll] = useTransition()
   const {
     items,
     draggingId,
@@ -34,12 +37,50 @@ export function PhotoManager({
     onDragEnd,
   } = useReorder(photos, (ids) => reorderPhotos(categoryId, ids))
 
+  const unpublishedCount = items.filter((photo) => !photo.published).length
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <PhotoUploader categoryId={categoryId} />
-        <div className="text-xs text-muted-foreground">
-          {saving ? "Saving order…" : `${items.length} total`}
+        <div className="flex flex-wrap items-center gap-3">
+          {unpublishedCount > 0 ? (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={publishingAll}
+              onClick={() =>
+                startPublishAll(async () => {
+                  const result = await publishAllPhotos(categoryId)
+                  if (!result.ok) {
+                    toast.error(result.error)
+                    return
+                  }
+                  const published = result.publishedCount ?? 0
+                  const skipped = result.skippedMissingAlt ?? 0
+                  if (skipped > 0) {
+                    toast.success(
+                      `Published ${published}. ${skipped} still need alt text.`,
+                    )
+                  } else {
+                    toast.success(
+                      published === 1
+                        ? "Published 1 photo"
+                        : `Published ${published} photos`,
+                    )
+                  }
+                  router.refresh()
+                })
+              }
+            >
+              {publishingAll
+                ? "Publishing…"
+                : `Publish all (${unpublishedCount})`}
+            </Button>
+          ) : null}
+          <div className="text-xs text-muted-foreground">
+            {saving ? "Saving order…" : `${items.length} total`}
+          </div>
         </div>
       </div>
 

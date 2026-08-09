@@ -444,6 +444,67 @@ export async function setPhotoPublished(
 }
 
 /**
+ * Publish every unpublished photo in a collection that already has alt text.
+ * Photos still missing alt are left alone and reported so the editor can fix
+ * them without hunting through rows that did publish.
+ */
+export async function publishAllPhotos(
+  categoryId: string,
+): Promise<
+  ActionResult & { publishedCount?: number; skippedMissingAlt?: number }
+> {
+  await requireAdmin()
+
+  const [category] = await db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(eq(categories.id, categoryId))
+    .limit(1)
+
+  if (!category) return { ok: false, error: "Collection not found." }
+
+  const drafts = await db
+    .select({ id: photos.id, alt: photos.alt })
+    .from(photos)
+    .where(and(eq(photos.categoryId, categoryId), eq(photos.published, false)))
+
+  if (drafts.length === 0) {
+    return { ok: false, error: "Nothing left to publish." }
+  }
+
+  const readyIds = drafts
+    .filter((photo) => photo.alt.trim().length > 0)
+    .map((photo) => photo.id)
+  const skippedMissingAlt = drafts.length - readyIds.length
+
+  if (readyIds.length === 0) {
+    return {
+      ok: false,
+      error: "Add alt text before publishing. Every draft is still missing it.",
+      skippedMissingAlt,
+    }
+  }
+
+  await db
+    .update(photos)
+    .set({ published: true, updatedAt: new Date() })
+    .where(
+      and(
+        eq(photos.categoryId, categoryId),
+        eq(photos.published, false),
+        sql`trim(${photos.alt}) <> ''`,
+      ),
+    )
+
+  invalidateContent(await slugForCategory(categoryId))
+  return {
+    ok: true,
+    publishedCount: readyIds.length,
+    skippedMissingAlt,
+  }
+}
+
+/**
  * Soft delete by default: unpublishing removes a photo from the site while
  * keeping the row and the stored object, so a mistake is reversible. Hard
  * deletion is a separate, explicit action — and even it leaves the object, so
