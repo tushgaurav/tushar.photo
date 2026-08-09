@@ -40,7 +40,7 @@ export function SubcollectionGrid({
                   alt={subcollection.cover.alt}
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover grayscale transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                 />
               ) : null}
             </div>

@@ -126,7 +126,7 @@ export function HomeHero({ categories }: { categories: Category[] }) {
                     fill
                     priority
                     sizes="(max-width: 768px) 44vw, 19vw"
-                    className="object-cover grayscale transition-transform duration-700 ease-out group-hover:scale-105"
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                   />
                 </motion.div>
               </AnimatePresence>
@@ -256,7 +256,7 @@ function Thumb({
             alt={alt}
             fill
             sizes="(max-width: 768px) 20vw, 11vw"
-            className="object-cover grayscale"
+            className="object-cover"
           />
         </motion.div>
       </AnimatePresence>

@@ -103,7 +103,7 @@ export function Lightbox({
                   fill
                   sizes="100vw"
                   priority
-                  className="object-contain grayscale"
+                  className="object-contain"
                 />
               </motion.div>
             </AnimatePresence>

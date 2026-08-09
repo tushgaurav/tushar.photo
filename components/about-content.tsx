@@ -63,7 +63,7 @@ export function AboutContent({
               alt={hero.alt}
               fill
               sizes="(max-width: 768px) 100vw, 40vw"
-              className="object-cover grayscale"
+              className="object-cover"
             />
           </motion.figure>
         ) : null}

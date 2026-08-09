@@ -75,7 +75,7 @@ function ParallaxImage({
             fill
             sizes={sizes}
             priority={priority}
-            className="object-cover grayscale transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
           />
         </motion.div>
       </button>

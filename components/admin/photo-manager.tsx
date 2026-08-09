@@ -171,7 +171,7 @@ function PhotoRow({
           alt=""
           fill
           sizes="64px"
-          className="object-cover grayscale"
+          className="object-cover"
         />
       </div>
 

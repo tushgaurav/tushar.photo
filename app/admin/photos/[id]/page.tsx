@@ -56,7 +56,7 @@ async function PhotoBody({ id }: { id: string }) {
               alt={photo.alt || "Uploaded photo"}
               fill
               sizes="(max-width: 1024px) 100vw, 40vw"
-              className="object-contain grayscale"
+              className="object-contain"
             />
           </div>
           <dl className="mt-4 flex flex-col gap-1 text-xs text-muted-foreground">
