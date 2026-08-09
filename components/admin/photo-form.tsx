@@ -1,8 +1,12 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useState } from "react"
 
-import { updatePhoto, type ActionResult } from "@/app/admin/actions"
+import {
+  generatePhotoMeta,
+  updatePhoto,
+  type ActionResult,
+} from "@/app/admin/actions"
 import {
   Checkbox,
   Field,
@@ -19,10 +23,50 @@ export function PhotoForm({ photo }: { photo: AdminPhoto }) {
     FormData
   >(updatePhoto.bind(null, photo.id), null)
 
+  // Controlled so the AI draft can fill them; everything else stays uncontrolled.
+  const [alt, setAlt] = useState(photo.alt)
+  const [caption, setCaption] = useState(photo.caption ?? "")
+  const [generating, setGenerating] = useState(false)
+  const [generateError, setGenerateError] = useState<string | null>(null)
+
+  async function handleGenerate() {
+    setGenerating(true)
+    setGenerateError(null)
+    const result = await generatePhotoMeta(photo.id)
+    if (result.ok) {
+      setAlt(result.alt)
+      setCaption(result.caption)
+    } else {
+      setGenerateError(result.error)
+    }
+    setGenerating(false)
+  }
+
   const errors = state && !state.ok ? state.fieldErrors : undefined
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
+      <div className="flex items-center gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={generating}
+          onClick={handleGenerate}
+        >
+          {generating ? "Generating…" : "Generate with AI"}
+        </Button>
+        <span className="text-xs text-muted-foreground">
+          Drafts alt text and a caption. Nothing is saved until you do.
+        </span>
+      </div>
+
+      {generateError ? (
+        <p role="alert" className="-mt-4 text-xs text-destructive">
+          {generateError}
+        </p>
+      ) : null}
+
       <Field
         label="Alt text"
         hint="Describes the image for screen readers. Required before publishing."
@@ -33,7 +77,8 @@ export function PhotoForm({ photo }: { photo: AdminPhoto }) {
           required
           rows={2}
           maxLength={300}
-          defaultValue={photo.alt}
+          value={alt}
+          onChange={(event) => setAlt(event.target.value)}
           invalid={!!errors?.alt}
         />
       </Field>
@@ -47,7 +92,8 @@ export function PhotoForm({ photo }: { photo: AdminPhoto }) {
           name="caption"
           rows={4}
           maxLength={2000}
-          defaultValue={photo.caption ?? ""}
+          value={caption}
+          onChange={(event) => setCaption(event.target.value)}
           invalid={!!errors?.caption}
         />
       </Field>

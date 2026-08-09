@@ -1,14 +1,18 @@
 "use server"
 
+import { openai } from "@ai-sdk/openai"
+import { generateText, Output } from "ai"
 import { and, asc, eq, gt, max, ne, sql } from "drizzle-orm"
 import { revalidateTag, updateTag } from "next/cache"
 import { redirect } from "next/navigation"
+import { z } from "zod"
 
 import { ABOUT_TAG, CONTENT_TAG, GEAR_TAG, categoryTag } from "@/lib/cache-tags"
 import { requireAdmin } from "@/lib/auth-guard"
 import { db } from "@/lib/db"
 import { aboutPage, categories, gearPage, photos } from "@/lib/db/schema"
 import { inspectUploadedImage } from "@/lib/image-metadata"
+import { photoUrl } from "@/lib/images"
 import { deleteObject } from "@/lib/r2"
 import {
   aboutSchema,
@@ -576,6 +580,107 @@ export async function reorderPhotos(
 
   invalidateContent(await slugForCategory(categoryId))
   return { ok: true }
+}
+
+export type GeneratedPhotoMeta =
+  | { ok: true; alt: string; caption: string }
+  | { ok: false; error: string }
+
+/**
+ * Drafts alt text and a caption for a photo with a vision model. The result is
+ * only returned to the editor's form — nothing is saved until they review it
+ * and submit, so a bad draft costs one click rather than a bad publish.
+ */
+export async function generatePhotoMeta(
+  photoId: string,
+): Promise<GeneratedPhotoMeta> {
+  await requireAdmin()
+
+  if (!process.env.OPENAI_API_KEY) {
+    return { ok: false, error: "OPENAI_API_KEY is not configured." }
+  }
+
+  const [photo] = await db
+    .select({
+      storageKey: photos.storageKey,
+      location: photos.location,
+      year: photos.year,
+      camera: photos.camera,
+      lens: photos.lens,
+      settings: photos.settings,
+      categoryName: categories.name,
+    })
+    .from(photos)
+    .innerJoin(categories, eq(categories.id, photos.categoryId))
+    .where(eq(photos.id, photoId))
+    .limit(1)
+
+  if (!photo) return { ok: false, error: "Photo not found." }
+
+  const context = [
+    photo.categoryName && `Collection: ${photo.categoryName}`,
+    photo.location && `Location: ${photo.location}`,
+    photo.year && `Year: ${photo.year}`,
+    photo.camera && `Camera: ${photo.camera}`,
+    photo.lens && `Lens: ${photo.lens}`,
+    photo.settings && `Settings: ${photo.settings}`,
+  ]
+    .filter(Boolean)
+    .join("\n")
+
+  try {
+    const { output } = await generateText({
+      model: openai("gpt-5.4-mini"),
+      output: Output.object({
+        schema: z.object({
+          alt: z
+            .string()
+            .describe(
+              "Alt text for screen readers. One or two plain sentences, under 280 characters, describing what is visible. No lead-ins like 'A photo of'.",
+            ),
+          caption: z
+            .string()
+            .describe(
+              "A caption draft of one to three sentences: observational and specific, grounded only in what is visible and the provided context. No purple prose.",
+            ),
+        }),
+      }),
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text:
+                "This photograph is from a personal photography portfolio that presents every image in black and white, so describe tone and light rather than color. " +
+                "Write alt text and a caption draft for it. The caption will be edited by the photographer, so keep it grounded and free of invented details.\n\n" +
+                (context ? `Known context:\n${context}` : "No extra context is known."),
+            },
+            {
+              type: "file",
+              mediaType: "image",
+              // A 1024px edge-transformed JPEG: plenty for description, a
+              // fraction of the original's bytes and tokens.
+              data: new URL(
+                photoUrl(photo.storageKey, { width: 1024, format: "jpeg" }),
+              ),
+            },
+          ],
+        },
+      ],
+    })
+
+    return {
+      ok: true,
+      // The schema caps nothing hard — clamp to the column limit instead of
+      // failing the whole generation over a few extra characters.
+      alt: output.alt.trim().slice(0, 300),
+      caption: output.caption.trim().slice(0, 2000),
+    }
+  } catch (error) {
+    console.error("generatePhotoMeta failed", error)
+    return { ok: false, error: "Generation failed. Try again." }
+  }
 }
 
 // ---------------------------------------------------------------------------
