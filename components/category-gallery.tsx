@@ -75,7 +75,7 @@ function ParallaxImage({
             fill
             sizes={sizes}
             priority={priority}
-            className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+            className="object-cover"
           />
         </motion.div>
       </button>
@@ -247,9 +247,9 @@ export function CategoryGallery({
         </div>
 
         <div className="mt-8 flex flex-col gap-6 md:mt-12 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
-          <div className="overflow-hidden px-[0.08em] pb-[0.14em]">
+          <div className="overflow-hidden px-[0.08em] pb-[0.25em]">
             <motion.h1
-              initial={{ y: "115%" }}
+              initial={{ y: "130%" }}
               animate={{ y: 0 }}
               transition={{ duration: 0.7, ease }}
               className="text-[clamp(3rem,13vw,8rem)] leading-none font-extrabold tracking-tighter lowercase text-balance"

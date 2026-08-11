@@ -34,9 +34,9 @@ export function GearContent({
       </header>
 
       {/* The mask needs room for the descender on `g`, or the reveal clips it. */}
-      <div className="mt-10 overflow-hidden px-[0.08em] pb-[0.14em] md:mt-16">
+      <div className="mt-10 overflow-hidden px-[0.08em] pb-[0.25em] md:mt-16">
         <motion.h1
-          initial={{ y: "115%" }}
+          initial={{ y: "130%" }}
           animate={{ y: 0 }}
           transition={{ duration: 0.7, ease }}
           className="text-6xl leading-none font-extrabold tracking-tighter lowercase md:text-9xl"
