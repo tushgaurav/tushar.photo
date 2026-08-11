@@ -65,6 +65,12 @@ export type Category = {
   year: string
   intro: string
   photos: Photo[]
+  /**
+   * What the home filmstrip shows: the category's own photos, or — when it
+   * only holds sub-collections — the sub-collections' photos. Capped at the
+   * seven slots the filmstrip renders (one center, three per side).
+   */
+  heroPhotos: Photo[]
   /** Slug of the parent collection, null for top-level collections. */
   parentSlug: string | null
   /** Published sub-collections in display order. Empty for sub-collections. */

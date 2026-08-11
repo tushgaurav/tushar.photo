@@ -28,12 +28,24 @@ function toPhoto(row: PhotoRow): Photo {
 
 type RowWithPhotos = CategoryRow & { photos: PhotoRow[] }
 
+/** The home filmstrip renders one center photo plus six thumbnails. */
+const HERO_PHOTO_COUNT = 7
+
+function toHeroPhotos(ownPhotos: Photo[], childRows: RowWithPhotos[]): Photo[] {
+  const pool =
+    ownPhotos.length > 0
+      ? ownPhotos
+      : childRows.flatMap((child) => child.photos.map(toPhoto))
+  return pool.slice(0, HERO_PHOTO_COUNT)
+}
+
 function toCategory(
   row: RowWithPhotos,
   displayIndex: number,
   parentSlug: string | null,
-  children: SubcollectionSummary[],
+  childRows: RowWithPhotos[] = [],
 ): Category {
+  const ownPhotos = row.photos.map(toPhoto)
   return {
     id: row.id,
     slug: row.slug,
@@ -42,9 +54,10 @@ function toCategory(
     index: displayIndex,
     year: row.year,
     intro: row.intro,
-    photos: row.photos.map(toPhoto),
+    photos: ownPhotos,
+    heroPhotos: toHeroPhotos(ownPhotos, childRows),
     parentSlug,
-    children,
+    children: childRows.map((child) => toSummary(child, row.slug)),
   }
 }
 
@@ -94,12 +107,7 @@ export async function getCategories(): Promise<Category[]> {
   const topLevel = rows.filter((row) => row.parentId === null)
 
   return topLevel.map((row, i) =>
-    toCategory(
-      row,
-      i + 1,
-      null,
-      childrenOf(rows, row).map((child) => toSummary(child, row.slug)),
-    ),
+    toCategory(row, i + 1, null, childrenOf(rows, row)),
   )
 }
 
@@ -140,7 +148,7 @@ export async function getSubcollection(
   if (!parentRow) return null
 
   const siblings = childrenOf(rows, parentRow).map((row, i) =>
-    toCategory(row, i + 1, parentSlug, []),
+    toCategory(row, i + 1, parentSlug),
   )
 
   const index = siblings.findIndex((sibling) => sibling.slug === childSlug)

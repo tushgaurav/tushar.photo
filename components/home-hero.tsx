@@ -4,19 +4,10 @@ import { useCallback, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
-import type { Category, Photo } from "@/lib/content"
+import type { Category } from "@/lib/content"
 import { usePageTransition } from "@/components/page-transition"
 import { SignatureMark } from "@/components/signature-mark"
 import { SiteMenu } from "@/components/site-menu"
-
-/**
- * A collection that only holds sub-collections (e.g. "events") has no photos
- * of its own, so the filmstrip borrows its sub-collections' covers instead.
- */
-function heroPhotos(category: Category): Photo[] {
-  if (category.photos.length > 0) return category.photos
-  return category.children.flatMap((child) => (child.cover ? [child.cover] : []))
-}
 
 export function HomeHero({ categories }: { categories: Category[] }) {
   const [active, setActive] = useState(0)
@@ -53,7 +44,9 @@ export function HomeHero({ categories }: { categories: Category[] }) {
   // state rather than an impossible one.
   if (!category) return null
 
-  const photos = heroPhotos(category)
+  // Server-built: own photos, or the sub-collections' photos for a
+  // sub-collection-only category like "events".
+  const photos = category.heroPhotos
   const centerPhoto = photos[0]
 
   if (!centerPhoto) return null
