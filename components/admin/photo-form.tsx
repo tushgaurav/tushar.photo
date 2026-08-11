@@ -10,7 +10,6 @@ import {
 import {
   Checkbox,
   Field,
-  Select,
   TextArea,
   TextInput,
 } from "@/components/admin/field"
@@ -121,18 +120,6 @@ export function PhotoForm({ photo }: { photo: AdminPhoto }) {
           />
         </Field>
       </div>
-
-      <Field
-        label="Layout"
-        hint="Full spans the page. Left and right place the image beside its caption."
-        errors={errors?.layout}
-      >
-        <Select name="layout" defaultValue={photo.layout}>
-          <option value="full">Full width</option>
-          <option value="left">Image left, text right</option>
-          <option value="right">Text left, image right</option>
-        </Select>
-      </Field>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
         <Field label="Camera" errors={errors?.camera}>

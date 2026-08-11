@@ -51,6 +51,10 @@ export type CategoryInput = z.infer<typeof categorySchema>
 
 export const photoLayoutSchema = z.enum(["left", "right", "full"])
 
+/**
+ * The photo form's fields. Layout is deliberately absent: it is set from the
+ * visual arrange board via its own action, not the edit form.
+ */
 export const photoSchema = z.object({
   alt: trimmed
     .min(1, "Required for screen readers")
@@ -58,7 +62,6 @@ export const photoSchema = z.object({
   caption: trimmed.max(2000, "Too long").optional().or(z.literal("")),
   location: trimmed.max(200, "Too long").optional().or(z.literal("")),
   year: trimmed.regex(/^\d{4}$/, "Four-digit year"),
-  layout: photoLayoutSchema,
   camera: trimmed.max(120, "Too long").default(""),
   lens: trimmed.max(120, "Too long").default(""),
   settings: trimmed.max(120, "Too long").default(""),

@@ -19,6 +19,7 @@ import {
   categorySchema,
   emptyToNull,
   gearSchema,
+  photoLayoutSchema,
   photoSchema,
   reorderSchema,
   uploadedPhotoSchema,
@@ -372,7 +373,6 @@ export async function updatePhoto(
     caption: formData.get("caption") ?? "",
     location: formData.get("location") ?? "",
     year: formData.get("year"),
-    layout: formData.get("layout"),
     camera: formData.get("camera") ?? "",
     lens: formData.get("lens") ?? "",
     settings: formData.get("settings") ?? "",
@@ -402,7 +402,6 @@ export async function updatePhoto(
       caption: emptyToNull(parsed.data.caption),
       location: emptyToNull(parsed.data.location),
       year: parsed.data.year,
-      layout: parsed.data.layout,
       camera: parsed.data.camera,
       lens: parsed.data.lens,
       settings: parsed.data.settings,
@@ -414,6 +413,40 @@ export async function updatePhoto(
   const slug = await slugForCategory(existing.categoryId)
   invalidateContent(slug)
 
+  return { ok: true }
+}
+
+/**
+ * Layout is set from the arrange board (drag or the segmented control) rather
+ * than the photo form, so it gets its own narrow action instead of a full
+ * form round-trip.
+ */
+export async function setPhotoLayout(
+  photoId: string,
+  layout: "left" | "right" | "full",
+): Promise<ActionResult> {
+  await requireAdmin()
+
+  const parsedId = z.string().uuid().safeParse(photoId)
+  const parsedLayout = photoLayoutSchema.safeParse(layout)
+  if (!parsedId.success || !parsedLayout.success) {
+    return { ok: false, error: "Invalid layout change." }
+  }
+
+  const [existing] = await db
+    .select({ categoryId: photos.categoryId })
+    .from(photos)
+    .where(eq(photos.id, parsedId.data))
+    .limit(1)
+
+  if (!existing) return { ok: false, error: "Photo not found." }
+
+  await db
+    .update(photos)
+    .set({ layout: parsedLayout.data, updatedAt: new Date() })
+    .where(eq(photos.id, parsedId.data))
+
+  invalidateContent(await slugForCategory(existing.categoryId))
   return { ok: true }
 }
 

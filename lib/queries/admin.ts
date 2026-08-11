@@ -17,6 +17,8 @@ export type AdminPhoto = {
   id: string
   storageKey: string
   thumbUrl: string
+  /** Wider transform for the arrange board, where rows render near full width. */
+  previewUrl: string
   blurDataUrl: string
   width: number
   height: number
@@ -49,6 +51,7 @@ function toAdminPhoto(row: PhotoRow): AdminPhoto {
     id: row.id,
     storageKey: row.storageKey,
     thumbUrl: photoUrl(row.storageKey, { width: 400 }),
+    previewUrl: photoUrl(row.storageKey, { width: 1000 }),
     blurDataUrl: row.blurDataUrl,
     width: row.width,
     height: row.height,
