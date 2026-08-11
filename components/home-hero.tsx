@@ -59,21 +59,17 @@ export function HomeHero({ categories }: { categories: Category[] }) {
   if (!centerPhoto) return null
 
   /**
-   * The filmstrip wants three thumbnails either side. Rather than indexing
-   * fixed positions — which broke as soon as a category could have fewer than
-   * five photos — draw from this category first and top up from the following
-   * ones, skipping any gaps.
+   * The filmstrip wants three thumbnails either side, drawn only from the
+   * active category. Categories with fewer than seven photos cycle through
+   * their own photos again rather than borrowing from other categories.
    */
-  const otherFirstPhotos = Array.from(
-    { length: Math.max(categories.length - 1, 0) },
-    (_, offset) => categories[(active + offset + 1) % categories.length],
-  ).flatMap((c) => {
-    const first = c ? heroPhotos(c)[0] : undefined
-    return first ? [first] : []
-  })
+  const thumbs = Array.from(
+    { length: 6 },
+    (_, i) => photos[(i + 1) % photos.length],
+  )
 
-  const leftThumbs = photos.slice(1, 4)
-  const rightThumbs = [...photos.slice(4, 5), ...otherFirstPhotos].slice(0, 3)
+  const leftThumbs = thumbs.slice(0, 3)
+  const rightThumbs = thumbs.slice(3, 6)
 
   return (
     <main className="flex min-h-[calc(100svh-0.75rem)] flex-col overflow-hidden md:min-h-[calc(100svh-1.25rem)]">
