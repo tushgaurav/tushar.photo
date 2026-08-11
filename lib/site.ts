@@ -4,7 +4,7 @@
  */
 export const SITE_URL = "https://tushar.photo"
 
-export const SITE_NAME = "Tushar Gaurav — Photography"
+export const SITE_NAME = "Tushar, Behind the Camera"
 
 export const SITE_DESCRIPTION =
-  "The photography journal of Tushar Gaurav. Streets, wildlife, landscapes, and portraits — documented in black and white."
+  "My little corner of the internet, through a camera lens."

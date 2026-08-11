@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: SITE_NAME,
-    template: '%s — Tushar Gaurav Photography',
+    template: '%s — Tushar, Behind the Camera',
   },
   description: SITE_DESCRIPTION,
   openGraph: {
