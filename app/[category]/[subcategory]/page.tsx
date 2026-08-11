@@ -2,11 +2,13 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { CategoryGallery } from "@/components/category-gallery"
+import { JsonLd } from "@/components/json-ld"
 import {
   getCategories,
   getSubcollection,
   getSubcollectionParams,
 } from "@/lib/queries/photos"
+import { SITE_URL } from "@/lib/site"
 
 export async function generateStaticParams() {
   const params = await getSubcollectionParams()
@@ -29,9 +31,19 @@ export async function generateMetadata({
   const result = await getSubcollection(category, subcategory)
   if (!result) return {}
 
+  const title = `${result.category.name} — ${result.parent.name}`
+  const cover = result.category.heroPhotos[0]
+
   return {
-    title: `${result.category.name} — ${result.parent.name} — Tushar Gaurav Photography`,
+    title,
     description: result.category.intro,
+    alternates: { canonical: `/${result.category.path}` },
+    openGraph: {
+      title: `${title} — Tushar Gaurav Photography`,
+      description: result.category.intro,
+      url: `/${result.category.path}`,
+      images: cover ? [{ url: cover.ogSrc, alt: cover.alt }] : undefined,
+    },
   }
 }
 
@@ -50,14 +62,33 @@ export default async function SubcollectionPage({
   if (!result) notFound()
 
   return (
-    <CategoryGallery
-      category={result.category}
-      prev={result.prev}
-      next={result.next}
-      collections={all}
-      backHref={`/${result.parent.slug}`}
-      backLabel={`[ ← ${result.parent.name.toUpperCase()} ]`}
-      counterTotal={result.siblingCount}
-    />
+    <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "ImageGallery",
+          name: `${result.category.name} — ${result.parent.name} — Tushar Gaurav Photography`,
+          description: result.category.intro,
+          url: `${SITE_URL}/${result.category.path}`,
+          author: { "@type": "Person", name: "Tushar Gaurav", url: SITE_URL },
+          image: result.category.photos.map((photo) => ({
+            "@type": "ImageObject",
+            contentUrl: photo.ogSrc,
+            description: photo.alt,
+            ...(photo.caption ? { caption: photo.caption } : {}),
+            ...(photo.location ? { contentLocation: photo.location } : {}),
+          })),
+        }}
+      />
+      <CategoryGallery
+        category={result.category}
+        prev={result.prev}
+        next={result.next}
+        collections={all}
+        backHref={`/${result.parent.slug}`}
+        backLabel={`[ ← ${result.parent.name.toUpperCase()} ]`}
+        counterTotal={result.siblingCount}
+      />
+    </>
   )
 }

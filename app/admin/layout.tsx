@@ -9,7 +9,8 @@ import { Toaster } from "@/components/ui/sonner"
 import { requireAdmin } from "@/lib/auth-guard"
 
 export const metadata: Metadata = {
-  title: "Admin — tushar.photo",
+  // Absolute: the root layout's title template shouldn't suffix admin pages.
+  title: { absolute: "Admin — tushar.photo" },
   robots: { index: false, follow: false },
 }
 

@@ -12,6 +12,11 @@ function toPhoto(row: PhotoRow): Photo {
   return {
     id: row.id,
     src: photoUrl(row.storageKey, { width: 2000 }),
+    ogSrc: photoUrl(row.storageKey, {
+      width: 1200,
+      format: "jpeg",
+      grayscale: true,
+    }),
     blurDataUrl: row.blurDataUrl,
     width: row.width,
     height: row.height,

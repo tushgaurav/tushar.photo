@@ -16,6 +16,11 @@ export type Photo = {
   /** Cloudflare transformation URL. */
   src: string
   /**
+   * Grayscale JPEG for Open Graph previews. The site's monochrome look is a
+   * CSS filter, which social crawlers don't run, so it is baked in here.
+   */
+  ogSrc: string
+  /**
    * A 16px WebP inlined as a data URL, intended as a `blurDataURL` placeholder.
    * Carried through but not currently rendered by any component.
    */

@@ -5,9 +5,10 @@ import { getGearContent } from "@/lib/queries/gear"
 import { getCategories } from "@/lib/queries/photos"
 
 export const metadata: Metadata = {
-  title: "Gear — Tushar Gaurav Photography",
+  title: "Gear",
   description:
     "The cameras, lenses and everything else Tushar Gaurav shoots black and white photography with.",
+  alternates: { canonical: "/gear" },
 }
 
 export default async function GearPage() {
