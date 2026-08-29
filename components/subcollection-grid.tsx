@@ -39,7 +39,7 @@ export function SubcollectionGrid({
                   src={subcollection.cover.src || "/placeholder.svg"}
                   alt={subcollection.cover.alt}
                   fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 400px"
                   className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                 />
               ) : null}

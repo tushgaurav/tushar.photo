@@ -17,7 +17,7 @@ export function GearContent({
   collections: MenuCollection[]
 }) {
   return (
-    <main className="px-4 py-6 md:px-10 md:py-10">
+    <main className="mx-auto w-full max-w-7xl px-4 py-6 md:px-10 md:py-10">
       <header className="flex items-start justify-between">
         <Link
           href="/"

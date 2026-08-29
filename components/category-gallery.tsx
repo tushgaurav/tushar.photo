@@ -112,7 +112,7 @@ function EditorialRow({
           <ParallaxImage
             photo={photo}
             aspect="aspect-[16/9] md:aspect-[2/1]"
-            sizes="100vw"
+            sizes="(max-width: 1280px) 100vw, 1280px"
             onOpen={onOpen}
             priority={index === 0}
           />
@@ -172,7 +172,7 @@ function EditorialRow({
       <ParallaxImage
         photo={photo}
         aspect="aspect-[4/5]"
-        sizes="(max-width: 768px) 100vw, 60vw"
+        sizes="(max-width: 768px) 100vw, (max-width: 1280px) 60vw, 768px"
         onOpen={onOpen}
         priority={index === 0}
       />
@@ -223,7 +223,7 @@ export function CategoryGallery({
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
   return (
-    <main className="px-4 py-6 md:px-10 md:py-10">
+    <main className="mx-auto w-full max-w-7xl px-4 py-6 md:px-10 md:py-10">
       {/* Header */}
       <header className="mb-12 md:mb-20">
         <div className="flex items-start justify-between">
