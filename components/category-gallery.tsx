@@ -40,13 +40,11 @@ function Reveal({
 
 function ParallaxImage({
   photo,
-  aspect,
   sizes,
   onOpen,
   priority = false,
 }: {
   photo: Photo
-  aspect: string
   sizes: string
   onOpen: () => void
   priority?: boolean
@@ -57,10 +55,23 @@ function ParallaxImage({
     offset: ["start end", "end start"],
   })
   // Image moves slightly slower than scroll for depth
-  const y = useTransform(scrollYProgress, [0, 1], ["-6%", "6%"])
+  const y = useTransform(scrollYProgress, [0, 1], ["-3%", "3%"])
+
+  const ratio = photo.width / photo.height
 
   return (
-    <div ref={ref} className={`relative w-full overflow-hidden bg-black ${aspect}`}>
+    <div
+      ref={ref}
+      // The frame takes the photo's own aspect ratio so nothing meaningful is
+      // cropped away. Landscape photos always fill the row width so edges stay
+      // aligned from photo to photo; only portrait shots get a height cap
+      // (centered) so they never grow taller than the viewport.
+      style={{
+        aspectRatio: `${photo.width} / ${photo.height}`,
+        ...(ratio < 1 ? { maxWidth: `calc(85svh * ${ratio})` } : null),
+      }}
+      className="relative mx-auto w-full overflow-hidden bg-black"
+    >
       <button
         type="button"
         onClick={onOpen}
@@ -68,7 +79,9 @@ function ParallaxImage({
         aria-label={`View ${photo.alt} fullscreen`}
         className="group absolute inset-0 z-10"
       >
-        <motion.div style={{ y }} className="absolute -inset-y-[8%] inset-x-0">
+        {/* Slight overscan gives the parallax room to move without showing
+            edges; kept small since it is effectively a zoom-crop. */}
+        <motion.div style={{ y }} className="absolute -inset-y-[4%] inset-x-0">
           <Image
             src={photo.src || "/placeholder.svg"}
             alt={photo.alt}
@@ -111,7 +124,6 @@ function EditorialRow({
         <figure>
           <ParallaxImage
             photo={photo}
-            aspect="aspect-[16/9] md:aspect-[2/1]"
             sizes="(max-width: 1280px) 100vw, 1280px"
             onOpen={onOpen}
             priority={index === 0}
@@ -171,7 +183,6 @@ function EditorialRow({
     <Reveal>
       <ParallaxImage
         photo={photo}
-        aspect="aspect-[4/5]"
         sizes="(max-width: 768px) 100vw, (max-width: 1280px) 60vw, 768px"
         onOpen={onOpen}
         priority={index === 0}
