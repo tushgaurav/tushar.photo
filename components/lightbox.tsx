@@ -3,6 +3,7 @@
 import { useCallback, useEffect } from "react"
 import Image from "next/image"
 import { AnimatePresence, motion } from "framer-motion"
+import { MapPin } from "lucide-react"
 import type { Photo } from "@/lib/content"
 
 const ease = [0.32, 0.72, 0, 1] as const
@@ -127,14 +128,17 @@ export function Lightbox({
               className="flex flex-col gap-2 px-4 py-4 md:flex-row md:items-end md:justify-between md:px-8 md:py-6"
             >
               <div className="max-w-md">
+                {photo.caption ? (
+                  <p className="text-sm leading-relaxed font-medium">
+                    {photo.caption}
+                  </p>
+                ) : null}
                 {photo.location ? (
-                  <p className="text-xs font-bold tracking-widest uppercase">
+                  <p className="mt-1.5 flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase opacity-60 md:text-xs">
+                    <MapPin className="size-3 shrink-0" aria-hidden="true" />
                     {photo.location}
                   </p>
                 ) : null}
-                <p className="mt-1 text-xs leading-relaxed opacity-60">
-                  {photo.alt}
-                </p>
               </div>
               <div className="flex gap-6 text-[10px] font-medium tracking-widest opacity-60 md:text-xs">
                 <span>{photo.camera}</span>
