@@ -3,7 +3,7 @@
 import { useCallback, useEffect } from "react"
 import Image from "next/image"
 import { AnimatePresence, motion } from "framer-motion"
-import { MapPin } from "lucide-react"
+import { ChevronLeft, ChevronRight, MapPin } from "lucide-react"
 import type { Photo } from "@/lib/content"
 
 const ease = [0.32, 0.72, 0, 1] as const
@@ -87,8 +87,14 @@ export function Lightbox({
               onClick={goPrev}
               aria-label="Previous photo"
               data-cursor="prev"
-              className="absolute top-0 bottom-0 left-0 z-10 w-1/4 md:w-1/3"
-            />
+              className="group absolute top-0 bottom-0 left-0 z-10 w-1/4 md:w-1/3"
+            >
+              <ChevronLeft
+                aria-hidden="true"
+                strokeWidth={1.5}
+                className="pointer-events-none absolute top-1/2 left-2 size-7 -translate-y-1/2 opacity-40 transition-opacity group-hover:opacity-100 md:left-5 md:size-8"
+              />
+            </button>
             <AnimatePresence mode="wait">
               <motion.div
                 key={photo.src}
@@ -113,8 +119,14 @@ export function Lightbox({
               onClick={goNext}
               aria-label="Next photo"
               data-cursor="next"
-              className="absolute top-0 right-0 bottom-0 z-10 w-1/4 md:w-1/3"
-            />
+              className="group absolute top-0 right-0 bottom-0 z-10 w-1/4 md:w-1/3"
+            >
+              <ChevronRight
+                aria-hidden="true"
+                strokeWidth={1.5}
+                className="pointer-events-none absolute top-1/2 right-2 size-7 -translate-y-1/2 opacity-40 transition-opacity group-hover:opacity-100 md:right-5 md:size-8"
+              />
+            </button>
           </div>
 
           {/* Metadata bar */}
